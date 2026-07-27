@@ -205,6 +205,7 @@ let recognitionRestartTimer = null;
 let questionSpeechTimer = null;
 let microphonePermissionGranted = false;
 let speechSynthesisUnlocked = false;
+let recognitionHadFatalError = false;
 const QUESTION_SPEECH_DELAY = 5000;
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
   || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -431,7 +432,12 @@ function renderQuestion() {
   nextQuestionBtn.textContent = currentIndex === questions.length - 1 ? "最初から" : "次の質問へ";
   updateVoiceInputButton();
   if (recognition) {
-    setVoiceStatus("「話す」を押すとマイクが始まります。", "ready");
+    setVoiceStatus(
+      IS_IOS
+        ? "「話す」を押すとSafariの音声認識が始まります。"
+        : "「話す」を押すとマイクが始まります。",
+      "ready"
+    );
   }
 
   const questionIndex = currentIndex;
@@ -596,8 +602,14 @@ function setupSpeechRecognition() {
   recognition.interimResults = true;
   recognition.maxAlternatives = 10;
   recognition.addEventListener("start", () => {
+    recognitionHadFatalError = false;
     setListeningState(true);
-    setVoiceStatus("聞き取り中です。回答を話してください。", "listening");
+    setVoiceStatus(
+      IS_IOS
+        ? "Safariで聞き取り中です。回答を話してください。"
+        : "聞き取り中です。回答を話してください。",
+      "listening"
+    );
   });
   recognition.addEventListener("result", (event) => {
     if (!isAcceptingSpeech || answerInputEl.disabled) return;
@@ -621,8 +633,15 @@ function setupSpeechRecognition() {
     }
   });
   recognition.addEventListener("error", (event) => {
+    if (event.error === "aborted") return;
+
     if (event.error === "no-speech") {
-      setVoiceStatus("音声が聞き取れませんでした。続けて話してください。", "listening");
+      setVoiceStatus(
+        IS_IOS
+          ? "音声が聞き取れませんでした。Safariで再接続しています…"
+          : "音声が聞き取れませんでした。続けて話してください。",
+        "listening"
+      );
       return;
     }
 
@@ -636,6 +655,7 @@ function setupSpeechRecognition() {
     };
 
     if (messages[event.error]) {
+      recognitionHadFatalError = true;
       shouldKeepListening = false;
       isAcceptingSpeech = false;
       updateVoiceInputButton();
@@ -644,6 +664,8 @@ function setupSpeechRecognition() {
   });
   recognition.addEventListener("end", () => {
     setListeningState(false);
+    if (recognitionHadFatalError) return;
+
     if (shouldKeepListening && isAcceptingSpeech && !answerInputEl.disabled) {
       clearTimeout(recognitionRestartTimer);
       recognitionRestartTimer = setTimeout(() => {
@@ -653,7 +675,12 @@ function setupSpeechRecognition() {
           shouldKeepListening = false;
           isAcceptingSpeech = false;
           updateVoiceInputButton();
-          setVoiceStatus("音声認識が停止しました。「話す」を押して再開してください。", "error");
+          setVoiceStatus(
+            IS_IOS
+              ? "Safariの音声認識が一区切りで停止しました。「話す」を押すと続きから再開できます。"
+              : "音声認識が停止しました。「話す」を押して再開してください。",
+            "error"
+          );
         }
       }, IS_IOS ? 350 : 150);
     } else if (!answerInputEl.disabled) {
@@ -662,7 +689,12 @@ function setupSpeechRecognition() {
   });
 
   voiceInputBtn.disabled = false;
-  setVoiceStatus("「話す」を押すとマイクが始まります。", "ready");
+  setVoiceStatus(
+    IS_IOS
+      ? "「話す」を押すとSafariの音声認識が始まります。"
+      : "「話す」を押すとマイクが始まります。",
+    "ready"
+  );
 }
 
 async function requestMicrophonePermission() {
@@ -681,7 +713,18 @@ async function requestMicrophonePermission() {
   return true;
 }
 
-async function startRecognitionSession() {
+function beginNativeRecognition() {
+  try {
+    recognition.start();
+  } catch (error) {
+    shouldKeepListening = false;
+    isAcceptingSpeech = false;
+    updateVoiceInputButton();
+    showMicrophoneStartError(error);
+  }
+}
+
+function startRecognitionSession() {
   if (isCodexPreview()) {
     showMicrophoneEnvironmentMessage();
     return;
@@ -693,18 +736,26 @@ async function startRecognitionSession() {
   isAcceptingSpeech = true;
   shouldKeepListening = true;
   recognitionAlternatives = [];
+  recognitionHadFatalError = false;
   updateVoiceInputButton();
-  setVoiceStatus("マイクの使用許可を確認しています…", "ready");
 
-  try {
-    await requestMicrophonePermission();
-    recognition.start();
-  } catch (error) {
+  if (IS_IOS) {
+    // iPhone Safariは、ユーザーのタップと同じ処理の中で
+    // webkitSpeechRecognition.start()を呼ぶ必要があります。
+    setVoiceStatus("Safariの音声認識を開始しています…", "ready");
+    beginNativeRecognition();
+    return;
+  }
+
+  setVoiceStatus("マイクの使用許可を確認しています…", "ready");
+  requestMicrophonePermission()
+    .then(() => beginNativeRecognition())
+    .catch((error) => {
     shouldKeepListening = false;
     isAcceptingSpeech = false;
     updateVoiceInputButton();
     showMicrophoneStartError(error);
-  }
+    });
 }
 
 function endRecognitionSession() {
@@ -727,7 +778,12 @@ function showMicrophoneStartError(error) {
   updateVoiceInputButton();
 
   if (error?.name === "NotAllowedError" || error?.name === "SecurityError") {
-    setVoiceStatus("マイクが許可されていません。端末の設定でこのサイトのマイクを許可してください。", "error");
+    setVoiceStatus(
+      IS_IOS
+        ? "Safariの音声認識またはマイクが許可されていません。SafariのWebサイト設定でマイクを「許可」にしてください。"
+        : "マイクが許可されていません。端末の設定でこのサイトのマイクを許可してください。",
+      "error"
+    );
     return;
   }
   if (error?.name === "NotFoundError") {
@@ -783,7 +839,7 @@ repeatQuestionBtn.addEventListener("click", () => {
   speakQuestion();
 });
 
-voiceInputBtn.addEventListener("click", async () => {
+voiceInputBtn.addEventListener("click", () => {
   if (isCodexPreview()) {
     showMicrophoneEnvironmentMessage();
     return;
@@ -795,7 +851,7 @@ voiceInputBtn.addEventListener("click", async () => {
     return;
   }
 
-  await startRecognitionSession();
+  startRecognitionSession();
 });
 
 createProfileFields();
