@@ -210,6 +210,7 @@ const QUESTION_SPEECH_DELAY = 5000;
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
   || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const IS_MOBILE = IS_IOS || /Android|Mobile/i.test(navigator.userAgent);
+const USE_IOS_NATIVE_DICTATION = IS_IOS;
 
 function showLoginError(message) {
   loginErrorEl.textContent = message;
@@ -545,6 +546,13 @@ function setListeningState(listening) {
 }
 
 function updateVoiceInputButton() {
+  if (USE_IOS_NATIVE_DICTATION) {
+    voiceInputBtn.classList.remove("is-listening");
+    voiceInputBtn.setAttribute("aria-pressed", "false");
+    voiceButtonTextEl.textContent = "音声入力を開く";
+    return;
+  }
+
   const isCapturingAnswer = isAcceptingSpeech;
   voiceInputBtn.classList.toggle("is-listening", isCapturingAnswer);
   voiceInputBtn.setAttribute("aria-pressed", String(isCapturingAnswer));
@@ -581,6 +589,20 @@ function showMicrophoneEnvironmentMessage(message = "このプレビューでは
 function setupSpeechRecognition() {
   if (isCodexPreview()) {
     showMicrophoneEnvironmentMessage();
+    return;
+  }
+
+  // iPhone SafariのWeb Speech APIは、端末や設定によって
+  // service-not-allowedになり得るため、Apple標準のキーボード音声入力を使います。
+  if (USE_IOS_NATIVE_DICTATION) {
+    recognition = null;
+    voiceInputBtn.disabled = false;
+    answerInputEl.placeholder = "「音声入力を開く」を押し、キーボード右下のマイクから回答してください。";
+    updateVoiceInputButton();
+    setVoiceStatus(
+      "「音声入力を開く」を押し、キーボード右下のマイクを押してください。",
+      "ready"
+    );
     return;
   }
 
@@ -758,6 +780,27 @@ function startRecognitionSession() {
     });
 }
 
+function openIOSNativeDictation() {
+  clearTimeout(questionSpeechTimer);
+  window.speechSynthesis?.cancel();
+  endRecognitionSession();
+
+  if (answerInputEl.disabled) return;
+
+  answerInputEl.focus();
+  const end = answerInputEl.value.length;
+  try {
+    answerInputEl.setSelectionRange(end, end);
+  } catch {
+    // 選択範囲を変更できない端末ではフォーカスだけを使用します。
+  }
+  answerInputEl.scrollIntoView({ behavior: "smooth", block: "center" });
+  setVoiceStatus(
+    "キーボード右下のマイクを押して話してください。終わったら「完了」を押します。",
+    "ready"
+  );
+}
+
 function endRecognitionSession() {
   shouldKeepListening = false;
   isAcceptingSpeech = false;
@@ -844,6 +887,10 @@ voiceInputBtn.addEventListener("click", () => {
     showMicrophoneEnvironmentMessage();
     return;
   }
+  if (USE_IOS_NATIVE_DICTATION) {
+    openIOSNativeDictation();
+    return;
+  }
   if (!recognition) return;
 
   if (isAcceptingSpeech) {
@@ -852,6 +899,12 @@ voiceInputBtn.addEventListener("click", () => {
   }
 
   startRecognitionSession();
+});
+
+answerInputEl.addEventListener("input", () => {
+  if (USE_IOS_NATIVE_DICTATION && answerInputEl.value.trim()) {
+    setVoiceStatus("音声入力の内容を確認し、よければ「採点する」を押してください。", "ready");
+  }
 });
 
 createProfileFields();
