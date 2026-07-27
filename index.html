@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#155e75">
+  <title>N3 就職面接採点</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <section class="practice-panel login-panel" id="loginScreen" aria-labelledby="loginTitle">
+      <header class="login-header">
+        <p class="eyebrow">面接練習アプリ</p>
+        <h1 id="loginTitle">ログイン</h1>
+      </header>
+
+      <form id="loginForm" novalidate>
+        <div class="form-field">
+          <label for="loginPassword">パスワード</label>
+          <input
+            id="loginPassword"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            required
+            aria-describedby="loginError"
+          >
+        </div>
+        <p class="form-error hidden" id="loginError" role="alert"></p>
+        <button type="submit" class="primary login-button">ログイン</button>
+      </form>
+    </section>
+
+    <section class="practice-panel hidden" id="profileScreen" aria-labelledby="profileTitle">
+      <header class="profile-header">
+        <p class="eyebrow">日本語学校 N3レベル</p>
+        <h1 id="profileTitle">面接プロフィール</h1>
+      </header>
+
+      <form id="profileForm" novalidate>
+        <div class="profile-grid" id="profileFields"></div>
+        <p class="form-error hidden" id="profileError" role="alert"></p>
+        <button type="submit" class="primary start-button">面接を開始する</button>
+      </form>
+    </section>
+
+    <section class="practice-panel hidden" id="interviewScreen" aria-labelledby="appTitle">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">日本語学校 N3レベル</p>
+          <h1 id="appTitle">就職面接採点</h1>
+        </div>
+        <div class="counter" aria-live="polite">
+          <span id="questionNumber">1</span><span class="counter-divider">/</span><span id="questionTotal">10</span>
+        </div>
+      </header>
+
+      <div class="profile-summary">
+        <p><span>受講者</span><strong id="profileSummary"></strong></p>
+        <button type="button" class="edit-profile" id="editProfile">プロフィール編集</button>
+      </div>
+
+      <div class="progress" aria-hidden="true">
+        <span id="progressBar"></span>
+      </div>
+
+      <div class="question-box">
+        <p class="category" id="category"></p>
+        <h2 id="questionText"></h2>
+      </div>
+
+      <div class="answer-field">
+        <label for="answerInput">回答（音声認識の内容を確認・修正できます）</label>
+        <textarea
+          id="answerInput"
+          rows="5"
+          inputmode="text"
+          autocomplete="off"
+          enterkeyhint="done"
+          placeholder="「話す」を押して回答してください。必要ならここに直接入力できます。"
+        ></textarea>
+      </div>
+
+      <div class="voice-status" id="voiceStatus" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="voiceStatusText">音声機能を準備しています…</span>
+      </div>
+
+      <p class="voice-help" id="voiceHelp">
+        初回はブラウザのマイク許可で「許可」を選んでください。音が出ない場合は「質問を聞く」を押してください。
+      </p>
+
+      <div class="answer-actions">
+        <button type="button" class="secondary" id="voiceInput" aria-pressed="false">
+          <span class="button-icon" aria-hidden="true">●</span>
+          <span id="voiceButtonText">話す</span>
+        </button>
+        <button type="button" class="secondary" id="repeatQuestion">質問を聞く</button>
+        <button type="button" class="primary" id="scoreAnswer">採点する</button>
+      </div>
+
+      <section class="score-card hidden" id="scoreCard" aria-labelledby="scoreTitle" aria-live="polite">
+        <div class="total-row">
+          <h3 id="scoreTitle">合計点</h3>
+          <p><strong id="totalScore">0</strong><span>/100</span></p>
+        </div>
+        <dl class="score-list" id="scoreList"></dl>
+        <button type="button" class="primary next-button" id="nextQuestion">次の質問へ</button>
+      </section>
+    </section>
+  </main>
+
+  <script src="script.js?v=20260726-10"></script>
+</body>
+</html>
