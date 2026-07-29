@@ -11,7 +11,7 @@ const PROFILE_FIELDS = [
     type: "text",
     placeholder: "例：グエン・ヴァン・アン",
     autocomplete: "name",
-    matchesAnswer: (answer, value) => containsProfileReading(answer, value)
+    matchesAnswer: (answer, value) => containsProfileReading(answer, value, "name")
   },
   {
     key: "age",
@@ -30,7 +30,7 @@ const PROFILE_FIELDS = [
     type: "text",
     placeholder: "例：ベトナム",
     autocomplete: "country-name",
-    matchesAnswer: (answer, value) => containsProfileValue(answer, value)
+    matchesAnswer: (answer, value) => containsProfileValue(answer, value, "nationality")
   },
   {
     key: "schoolName",
@@ -38,7 +38,7 @@ const PROFILE_FIELDS = [
     type: "text",
     placeholder: "例：さくら日本語学校",
     autocomplete: "organization",
-    matchesAnswer: (answer, value) => containsProfileReading(answer, value)
+    matchesAnswer: (answer, value) => containsProfileReading(answer, value, "schoolName")
   }
 ];
 
@@ -254,7 +254,7 @@ function toHiragana(text) {
   ));
 }
 
-const UNAMBIGUOUS_SPEECH_READINGS = [
+const SCHOOL_SPEECH_READINGS = [
   ["日本語学校", "にほんごがっこう"],
   ["専門学校", "せんもんがっこう"],
   ["大学", "だいがく"],
@@ -262,24 +262,41 @@ const UNAMBIGUOUS_SPEECH_READINGS = [
   ["学校", "がっこう"]
 ];
 
-function normalizeProfileSpeech(text) {
+const NATIONALITY_SPEECH_ALIASES = [
+  ["ばんぐらでぃっしゅ", "ばんぐらでしゅ"],
+  ["ばんぐらでっしゅ", "ばんぐらでしゅ"]
+];
+
+function normalizeProfileSpeech(text, fieldKey, profileValue) {
   // 表記ゆれだけを吸収する、発音を変えない正規化です。
-  // 濁点・拗音・小書き文字などは残すため、別の発音は一致しません。
+  // 似た文字を機械的に近づけず、意味が同じと確認できる語だけを置換します。
   let normalized = toHiragana(String(text ?? "").normalize("NFKC"));
-  UNAMBIGUOUS_SPEECH_READINGS.forEach(([spelling, reading]) => {
-    normalized = normalized.replaceAll(spelling, reading);
-  });
+  if (fieldKey === "schoolName") {
+    SCHOOL_SPEECH_READINGS.forEach(([spelling, reading]) => {
+      normalized = normalized.replaceAll(spelling, reading);
+    });
+  }
+  if (fieldKey === "nationality") {
+    NATIONALITY_SPEECH_ALIASES.forEach(([variant, canonical]) => {
+      normalized = normalized.replaceAll(variant, canonical);
+    });
+  }
+  // 「関」は人名では通常「せき」と読まれます。対象の名前が関／せきの
+  // ときだけ読みを同一視し、学校名などの別の単語には適用しません。
+  if (fieldKey === "name" && /^(関|せき)$/u.test(String(profileValue ?? "").trim())) {
+    normalized = normalized.replaceAll("関", "せき");
+  }
   return normalized
     .toLowerCase()
     .replace(/[\p{Separator}\p{Punctuation}\p{Format}]/gu, "")
     .replace(/ー+/g, "");
 }
 
-function hasProfileValue(text, value) {
+function hasProfileValue(text, value, fieldKey) {
   const spelling = normalizeForComparison(value);
-  const spokenForm = normalizeProfileSpeech(value);
+  const spokenForm = normalizeProfileSpeech(value, fieldKey, value);
   const normalizedText = normalizeForComparison(text);
-  const normalizedSpeech = normalizeProfileSpeech(text);
+  const normalizedSpeech = normalizeProfileSpeech(text, fieldKey, value);
 
   if (spelling && normalizedText.includes(spelling)) return true;
 
@@ -290,13 +307,13 @@ function hasProfileValue(text, value) {
   return isKanaOnly && spokenForm.length > 0 && normalizedSpeech.includes(spokenForm);
 }
 
-function containsProfileValue(answer, value) {
-  return hasProfileValue(answer, value)
-    || recognitionAlternatives.some((alternative) => hasProfileValue(alternative, value));
+function containsProfileValue(answer, value, fieldKey) {
+  return hasProfileValue(answer, value, fieldKey)
+    || recognitionAlternatives.some((alternative) => hasProfileValue(alternative, value, fieldKey));
 }
 
-function containsProfileReading(answer, value) {
-  return containsProfileValue(answer, value);
+function containsProfileReading(answer, value, fieldKey) {
+  return containsProfileValue(answer, value, fieldKey);
 }
 
 function containsAge(answer, value) {
