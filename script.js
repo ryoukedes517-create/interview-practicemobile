@@ -248,19 +248,55 @@ function normalizeForComparison(text) {
     .replace(/[\p{Separator}\p{Punctuation}\p{Format}ー]/gu, "");
 }
 
+function toHiragana(text) {
+  return String(text ?? "").replace(/[ァ-ヶ]/g, (character) => (
+    String.fromCharCode(character.charCodeAt(0) - 0x60)
+  ));
+}
+
+const UNAMBIGUOUS_SPEECH_READINGS = [
+  ["日本語学校", "にほんごがっこう"],
+  ["専門学校", "せんもんがっこう"],
+  ["大学", "だいがく"],
+  ["日本語", "にほんご"],
+  ["学校", "がっこう"]
+];
+
+function normalizeProfileSpeech(text) {
+  // 表記ゆれだけを吸収する、発音を変えない正規化です。
+  // 濁点・拗音・小書き文字などは残すため、別の発音は一致しません。
+  let normalized = toHiragana(String(text ?? "").normalize("NFKC"));
+  UNAMBIGUOUS_SPEECH_READINGS.forEach(([spelling, reading]) => {
+    normalized = normalized.replaceAll(spelling, reading);
+  });
+  return normalized
+    .toLowerCase()
+    .replace(/[\p{Separator}\p{Punctuation}\p{Format}]/gu, "")
+    .replace(/ー+/g, "");
+}
+
+function hasProfileValue(text, value) {
+  const spelling = normalizeForComparison(value);
+  const spokenForm = normalizeProfileSpeech(value);
+  const normalizedText = normalizeForComparison(text);
+  const normalizedSpeech = normalizeProfileSpeech(text);
+
+  if (spelling && normalizedText.includes(spelling)) return true;
+
+  // かなだけで構成された値は、ひらがな・カタカナ・全半角の違いを
+  // 同じ発音として照合します。漢字は読みが一意に決まらないため、
+  // 推測して別の発音まで正解にしないよう文字表記でのみ照合します。
+  const isKanaOnly = /^[ぁ-ゖー]+$/u.test(spokenForm);
+  return isKanaOnly && spokenForm.length > 0 && normalizedSpeech.includes(spokenForm);
+}
+
 function containsProfileValue(answer, value) {
-  const normalizedValue = normalizeForComparison(value);
-  return normalizedValue.length > 0 && normalizeForComparison(answer).includes(normalizedValue);
+  return hasProfileValue(answer, value)
+    || recognitionAlternatives.some((alternative) => hasProfileValue(alternative, value));
 }
 
 function containsProfileReading(answer, value) {
-  if (containsProfileValue(answer, value)) return true;
-
-  // 音声認識が同じ読みを別の漢字へ変換した場合は、
-  // 同じ音声から得られた別候補も確認して採点します。
-  return recognitionAlternatives.some((alternative) => (
-    containsProfileValue(alternative, value)
-  ));
+  return containsProfileValue(answer, value);
 }
 
 function containsAge(answer, value) {
