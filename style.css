@@ -333,6 +333,23 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .next-button { width: 100%; }
 .hidden { display: none; }
 
+.debug-panel {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px dashed #94a3b8;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #334155;
+}
+
+.debug-panel h3 { margin-bottom: 8px; font-size: 0.95rem; }
+.debug-panel pre {
+  margin: 0;
+  overflow-x: auto;
+  font: 0.78rem/1.55 ui-monospace, SFMono-Regular, Consolas, monospace;
+  white-space: pre-wrap;
+}
+
 @keyframes listening-pulse {
   50% { box-shadow: 0 0 0 9px rgba(220, 38, 38, 0.04); }
 }

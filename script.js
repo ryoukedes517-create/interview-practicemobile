@@ -188,6 +188,8 @@ const nextQuestionBtn = $("nextQuestion");
 const scoreCardEl = $("scoreCard");
 const totalScoreEl = $("totalScore");
 const scoreListEl = $("scoreList");
+const debugPanelEl = $("debugPanel");
+const debugOutputEl = $("debugOutput");
 const voiceInputBtn = $("voiceInput");
 const voiceButtonTextEl = $("voiceButtonText");
 const repeatQuestionBtn = $("repeatQuestion");
@@ -206,6 +208,9 @@ let questionSpeechTimer = null;
 let microphonePermissionGranted = false;
 let speechSynthesisUnlocked = false;
 let recognitionHadFatalError = false;
+let profileMatchDebug = [];
+// 開発時は URL の末尾に ?debugProfileMatch を付けると照合内容を表示できます。
+const DEBUG_PROFILE_MATCHING = new URLSearchParams(window.location.search).has("debugProfileMatch");
 const QUESTION_SPEECH_DELAY = 5000;
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
   || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -264,8 +269,12 @@ const SCHOOL_SPEECH_READINGS = [
 
 const NATIONALITY_SPEECH_ALIASES = [
   ["ばんぐらでぃっしゅ", "ばんぐらでしゅ"],
-  ["ばんぐらでっしゅ", "ばんぐらでしゅ"]
+  ["ばんぐらでっしゅ", "ばんぐらでしゅ"],
+  ["べとなむこく", "べとなむ"],
+  ["にほんこく", "にほん"]
 ];
+
+const NAME_SPEECH_ALIASES = [["関", "せき"]];
 
 function normalizeProfileSpeech(text, fieldKey, profileValue) {
   // 表記ゆれだけを吸収する、発音を変えない正規化です。
@@ -281,15 +290,16 @@ function normalizeProfileSpeech(text, fieldKey, profileValue) {
       normalized = normalized.replaceAll(variant, canonical);
     });
   }
-  // 「関」は人名では通常「せき」と読まれます。対象の名前が関／せきの
-  // ときだけ読みを同一視し、学校名などの別の単語には適用しません。
-  if (fieldKey === "name" && /^(関|せき)$/u.test(String(profileValue ?? "").trim())) {
-    normalized = normalized.replaceAll("関", "せき");
+  if (fieldKey === "name") {
+    NAME_SPEECH_ALIASES.forEach(([spelling, reading]) => {
+      const expected = String(profileValue ?? "").trim();
+      if (expected === spelling || expected === reading) normalized = normalized.replaceAll(spelling, reading);
+    });
   }
   return normalized
     .toLowerCase()
     .replace(/[\p{Separator}\p{Punctuation}\p{Format}]/gu, "")
-    .replace(/ー+/g, "");
+    .replace(/[ーっ]/g, "");
 }
 
 function hasProfileValue(text, value, fieldKey) {
@@ -298,13 +308,18 @@ function hasProfileValue(text, value, fieldKey) {
   const normalizedText = normalizeForComparison(text);
   const normalizedSpeech = normalizeProfileSpeech(text, fieldKey, value);
 
-  if (spelling && normalizedText.includes(spelling)) return true;
+  const directMatch = spelling && normalizedText.includes(spelling);
 
   // かなだけで構成された値は、ひらがな・カタカナ・全半角の違いを
   // 同じ発音として照合します。漢字は読みが一意に決まらないため、
   // 推測して別の発音まで正解にしないよう文字表記でのみ照合します。
-  const isKanaOnly = /^[ぁ-ゖー]+$/u.test(spokenForm);
-  return isKanaOnly && spokenForm.length > 0 && normalizedSpeech.includes(spokenForm);
+  const isKanaOnly = /^[ぁ-ゖ]+$/u.test(spokenForm);
+  const phoneticMatch = isKanaOnly && spokenForm.length > 0 && normalizedSpeech.includes(spokenForm);
+  const matched = Boolean(directMatch || phoneticMatch);
+  if (DEBUG_PROFILE_MATCHING) {
+    profileMatchDebug.push({ field: fieldKey, expected: value, source: text, expectedNormalized: spokenForm, sourceNormalized: normalizedSpeech, matched });
+  }
+  return matched;
 }
 
 function containsProfileValue(answer, value, fieldKey) {
@@ -323,7 +338,7 @@ function containsAge(answer, value) {
 }
 
 function hasClosingGreetingAtEnd(answer) {
-  const normalizedAnswer = normalizeForComparison(answer);
+  const normalizedAnswer = normalizeGreeting(answer);
   const greetings = [
     "どうぞよろしくお願いいたします",
     "どうぞよろしくお願いします",
@@ -332,7 +347,15 @@ function hasClosingGreetingAtEnd(answer) {
     "ありがとうございました",
     "以上です"
   ];
-  return greetings.some((greeting) => normalizedAnswer.endsWith(normalizeForComparison(greeting)));
+  const matched = greetings.some((greeting) => normalizedAnswer.endsWith(normalizeGreeting(greeting)));
+  if (DEBUG_PROFILE_MATCHING) {
+    profileMatchDebug.push({ field: "closingGreeting", expected: "最後の挨拶", source: answer, expectedNormalized: "よろしくお願いします等", sourceNormalized: normalizedAnswer, matched });
+  }
+  return matched;
+}
+
+function normalizeGreeting(text) {
+  return normalizeForComparison(text).replaceAll("宜しく", "よろしく");
 }
 
 function getIntroductionItems() {
@@ -374,6 +397,7 @@ function scoreIntroduction(text) {
 function scoreCurrentAnswer(rawAnswer) {
   const answer = normalize(rawAnswer);
   const current = questions[currentIndex];
+  profileMatchDebug = [];
   if (current.type === "introduction") return scoreIntroduction(rawAnswer);
 
   // 第2問以降は元アプリの採点ロジックを変更していません。
@@ -383,6 +407,23 @@ function scoreCurrentAnswer(rawAnswer) {
     if (!hasAnotherReason) scores = scores.map((score) => Math.min(score, 10));
   }
   return scores;
+}
+
+function renderProfileDebug() {
+  if (!DEBUG_PROFILE_MATCHING || questions[currentIndex].type !== "introduction") {
+    debugPanelEl.classList.add("hidden");
+    return;
+  }
+  const alternatives = recognitionAlternatives.length ? recognitionAlternatives.join(" ／ ") : "なし";
+  const rows = profileMatchDebug.map((entry) => (
+    `[${entry.matched ? "一致" : "不一致"}] ${entry.field}\n`
+    + `  期待: ${entry.expected}\n`
+    + `  認識: ${entry.source}\n`
+    + `  正規化（期待）: ${entry.expectedNormalized}\n`
+    + `  正規化（認識）: ${entry.sourceNormalized}`
+  ));
+  debugOutputEl.textContent = `音声認識の代替候補: ${alternatives}\n\n${rows.join("\n\n")}`;
+  debugPanelEl.classList.remove("hidden");
 }
 
 function createProfileFields() {
@@ -481,6 +522,7 @@ function renderQuestion() {
   progressBarEl.style.width = `${((currentIndex + 1) / questions.length) * 100}%`;
   answerInputEl.value = "";
   scoreCardEl.classList.add("hidden");
+  debugPanelEl.classList.add("hidden");
   answerInputEl.disabled = false;
   scoreAnswerBtn.disabled = false;
   nextQuestionBtn.textContent = currentIndex === questions.length - 1 ? "最初から" : "次の質問へ";
@@ -544,6 +586,7 @@ function renderScores(scores) {
   });
 
   scoreCardEl.classList.remove("hidden");
+  renderProfileDebug();
   answerInputEl.disabled = true;
   scoreAnswerBtn.disabled = true;
   scoreCardEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
