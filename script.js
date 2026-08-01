@@ -210,7 +210,7 @@ let recognitionHadFatalError = false;
 let profileMatchDebug = [];
 // 開発時は URL の末尾に ?debugProfileMatch を付けると照合内容を表示できます。
 const DEBUG_PROFILE_MATCHING = new URLSearchParams(window.location.search).has("debugProfileMatch");
-const QUESTION_SPEECH_DELAY = 5000;
+const QUESTION_SPEECH_DELAY = 2000;
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
   || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const IS_MOBILE = IS_IOS || /Android|Mobile/i.test(navigator.userAgent);
@@ -292,9 +292,45 @@ const NATIONALITY_SPEECH_ALIASES = [
   ["にほんこく", "にほん"]
 ];
 
-const NAME_SPEECH_ALIASES = [["関", "せき"]];
+const NAME_SPEECH_READINGS = [
+  ["佐々木", "ささき"],
+  ["渡邊", "わたなべ"],
+  ["渡辺", "わたなべ"],
+  ["髙橋", "たかはし"],
+  ["高橋", "たかはし"],
+  ["山田", "やまだ"],
+  ["佐藤", "さとう"],
+  ["鈴木", "すずき"],
+  ["田中", "たなか"],
+  ["伊藤", "いとう"],
+  ["山本", "やまもと"],
+  ["中村", "なかむら"],
+  ["小林", "こばやし"],
+  ["加藤", "かとう"],
+  ["吉田", "よしだ"],
+  ["山口", "やまぐち"],
+  ["松本", "まつもと"],
+  ["井上", "いのうえ"],
+  ["木村", "きむら"],
+  ["清水", "しみず"],
+  ["齋藤", "さいとう"],
+  ["斎藤", "さいとう"],
+  ["斉藤", "さいとう"],
+  ["太郎", "たろう"],
+  ["花子", "はなこ"],
+  ["健太", "けんた"],
+  ["翔太", "しょうた"],
+  ["大輔", "だいすけ"],
+  ["美咲", "みさき"],
+  ["直樹", "なおき"],
+  ["由美", "ゆみ"],
+  ["櫻", "さくら"],
+  ["桜", "さくら"],
+  ["関", "せき"],
+  ["阮", "ぐえん"]
+];
 
-function normalizeProfileSpeech(text, fieldKey, profileValue) {
+function normalizeProfileSpeech(text, fieldKey) {
   // 表記ゆれだけを吸収する、発音を変えない正規化です。
   // 似た文字を機械的に近づけず、意味が同じと確認できる語だけを置換します。
   let normalized = toHiragana(String(text ?? "").normalize("NFKC"));
@@ -309,9 +345,8 @@ function normalizeProfileSpeech(text, fieldKey, profileValue) {
     });
   }
   if (fieldKey === "name") {
-    NAME_SPEECH_ALIASES.forEach(([spelling, reading]) => {
-      const expected = String(profileValue ?? "").trim();
-      if (expected === spelling || expected === reading) normalized = normalized.replaceAll(spelling, reading);
+    NAME_SPEECH_READINGS.forEach(([spelling, reading]) => {
+      normalized = normalized.replaceAll(spelling, reading);
     });
   }
   return normalized
@@ -322,19 +357,19 @@ function normalizeProfileSpeech(text, fieldKey, profileValue) {
 
 function hasProfileValue(text, value, fieldKey) {
   const spelling = normalizeForComparison(value);
-  const spokenForm = normalizeProfileSpeech(value, fieldKey, value);
+  const spokenForm = normalizeProfileSpeech(value, fieldKey);
   const normalizedText = normalizeForComparison(text);
-  const normalizedSpeech = normalizeProfileSpeech(text, fieldKey, value);
+  const normalizedSpeech = normalizeProfileSpeech(text, fieldKey);
 
   const directMatch = spelling && normalizedText.includes(spelling);
 
-  // かなだけの値に加え、学校名は辞書で読みへ変換できた場合に限り、
+  // かなだけの値に加え、名前と学校名は辞書で読みへ変換できた場合に限り、
   // 漢字・ひらがな・カタカナを同じ発音として照合します。
   const isKanaOnly = /^[ぁ-ゖ]+$/u.test(spokenForm);
-  const isComparableSchoolReading = fieldKey === "schoolName"
+  const isComparableProfileReading = ["name", "schoolName"].includes(fieldKey)
     && spokenForm.length > 0
     && !/[\p{Script=Han}]/u.test(spokenForm);
-  const phoneticMatch = (isKanaOnly || isComparableSchoolReading)
+  const phoneticMatch = (isKanaOnly || isComparableProfileReading)
     && spokenForm.length > 0
     && normalizedSpeech.includes(spokenForm);
   const matched = Boolean(directMatch || phoneticMatch);
