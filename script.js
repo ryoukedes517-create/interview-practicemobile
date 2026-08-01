@@ -259,11 +259,30 @@ function toHiragana(text) {
 }
 
 const SCHOOL_SPEECH_READINGS = [
+  ["日本語教育", "にほんごきょういく"],
   ["日本語学校", "にほんごがっこう"],
   ["専門学校", "せんもんがっこう"],
+  ["名古屋", "なごや"],
+  ["横浜", "よこはま"],
+  ["新宿", "しんじゅく"],
+  ["東京", "とうきょう"],
+  ["大阪", "おおさか"],
+  ["京都", "きょうと"],
+  ["神戸", "こうべ"],
+  ["福岡", "ふくおか"],
+  ["国際", "こくさい"],
+  ["中央", "ちゅうおう"],
+  ["未来", "みらい"],
+  ["文化", "ぶんか"],
+  ["外語", "がいご"],
+  ["学院", "がくいん"],
+  ["学園", "がくえん"],
+  ["教育", "きょういく"],
   ["大学", "だいがく"],
   ["日本語", "にほんご"],
-  ["学校", "がっこう"]
+  ["学校", "がっこう"],
+  ["櫻", "さくら"],
+  ["桜", "さくら"]
 ];
 
 const NATIONALITY_SPEECH_ALIASES = [
@@ -309,11 +328,15 @@ function hasProfileValue(text, value, fieldKey) {
 
   const directMatch = spelling && normalizedText.includes(spelling);
 
-  // かなだけで構成された値は、ひらがな・カタカナ・全半角の違いを
-  // 同じ発音として照合します。漢字は読みが一意に決まらないため、
-  // 推測して別の発音まで正解にしないよう文字表記でのみ照合します。
+  // かなだけの値に加え、学校名は辞書で読みへ変換できた場合に限り、
+  // 漢字・ひらがな・カタカナを同じ発音として照合します。
   const isKanaOnly = /^[ぁ-ゖ]+$/u.test(spokenForm);
-  const phoneticMatch = isKanaOnly && spokenForm.length > 0 && normalizedSpeech.includes(spokenForm);
+  const isComparableSchoolReading = fieldKey === "schoolName"
+    && spokenForm.length > 0
+    && !/[\p{Script=Han}]/u.test(spokenForm);
+  const phoneticMatch = (isKanaOnly || isComparableSchoolReading)
+    && spokenForm.length > 0
+    && normalizedSpeech.includes(spokenForm);
   const matched = Boolean(directMatch || phoneticMatch);
   if (DEBUG_PROFILE_MATCHING) {
     profileMatchDebug.push({ field: fieldKey, expected: value, source: text, expectedNormalized: spokenForm, sourceNormalized: normalizedSpeech, matched });
