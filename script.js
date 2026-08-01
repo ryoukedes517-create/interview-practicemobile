@@ -359,25 +359,6 @@ function containsAge(answer, value) {
   return new RegExp(`(^|[^0-9])${escapedAge}\\s*(?:歳|才)(?=$|[^0-9])`).test(normalizedAnswer);
 }
 
-function hasRecommendedClosingGreeting(answer) {
-  const normalizedAnswer = normalizeGreeting(answer);
-  const greetings = [
-    "本日はどうぞよろしくお願いいたします",
-    "本日はどうぞよろしくお願いします",
-    "本日はよろしくお願いいたします",
-    "本日はよろしくお願いします",
-    "どうぞよろしくお願いいたします",
-    "どうぞよろしくお願いします",
-    "よろしくお願いいたします",
-    "よろしくお願いします"
-  ];
-  return greetings.some((greeting) => normalizedAnswer.endsWith(normalizeGreeting(greeting)));
-}
-
-function normalizeGreeting(text) {
-  return normalizeForComparison(text).replaceAll("宜しく", "よろしく");
-}
-
 function getIntroductionItems() {
   return PROFILE_FIELDS.map((field) => ({
     key: field.key,
@@ -571,73 +552,150 @@ function formatPoints(value) {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
-const SCORE_GUIDANCE = {
-  ja: {
-    feedback: {
-      excellent: "とてもよく答えられています。内容が具体的で、面接官に伝わりやすい回答です。",
-      good: "質問の要点に沿って答えられています。もう少し具体的にすると、さらに伝わりやすくなります。",
-      developing: "伝えたい内容は分かります。回答の順序を整理すると、より分かりやすくなります。",
-      retry: "質問に関係する内容を、もう少しはっきり伝えてみましょう。"
-    },
-    advice: {
-      excellent: "今の内容を保ち、ゆっくり、はっきり話すことを意識しましょう。",
-      good: "理由や具体例をもう一つ加えると、より説得力のある回答になります。",
-      developing: "最初に結論を言い、そのあとに理由や具体例を続けてみましょう。",
-      retry: "短くてもよいので、「答え・理由・具体例」の順で話してみましょう。",
-      closing: "最後に「本日はよろしくお願いします」をつけると、さらに自然です。"
-    }
-  },
-  vi: {
-    feedback: {
-      excellent: "Bạn trả lời rất tốt. Nội dung cụ thể và dễ hiểu đối với người phỏng vấn.",
-      good: "Bạn đã trả lời đúng trọng tâm. Nếu nói cụ thể hơn một chút, câu trả lời sẽ dễ hiểu hơn.",
-      developing: "Nội dung bạn muốn truyền đạt đã rõ. Sắp xếp lại thứ tự câu trả lời sẽ giúp người nghe dễ hiểu hơn.",
-      retry: "Hãy trình bày rõ hơn một chút những nội dung liên quan đến câu hỏi."
-    },
-    advice: {
-      excellent: "Hãy giữ nội dung hiện tại và chú ý nói chậm, rõ ràng.",
-      good: "Thêm một lý do hoặc ví dụ cụ thể sẽ làm câu trả lời thuyết phục hơn.",
-      developing: "Hãy nêu kết luận trước, sau đó trình bày lý do và ví dụ cụ thể.",
-      retry: "Dù ngắn cũng được, hãy nói theo thứ tự: câu trả lời, lý do, rồi ví dụ cụ thể.",
-      closing: "Cuối cùng, nếu thêm câu “本日はよろしくお願いします”, phần giới thiệu sẽ tự nhiên hơn."
-    }
-  },
-  bn: {
-    feedback: {
-      excellent: "আপনি খুব ভালোভাবে উত্তর দিয়েছেন। উত্তরটি নির্দিষ্ট এবং সাক্ষাৎকার গ্রহণকারীর কাছে সহজে বোধগম্য।",
-      good: "আপনি প্রশ্নের মূল বিষয় অনুযায়ী উত্তর দিয়েছেন। আরেকটু নির্দিষ্ট করে বললে উত্তরটি আরও পরিষ্কার হবে।",
-      developing: "আপনি যা বলতে চান তা বোঝা যাচ্ছে। উত্তরের ক্রম গুছিয়ে বললে আরও সহজে বোঝা যাবে।",
-      retry: "প্রশ্নের সঙ্গে সম্পর্কিত বিষয়গুলো আরেকটু স্পষ্টভাবে বলার চেষ্টা করুন।"
-    },
-    advice: {
-      excellent: "বর্তমান বিষয়বস্তু বজায় রেখে ধীরে ও স্পষ্টভাবে বলার চেষ্টা করুন।",
-      good: "আরও একটি কারণ বা নির্দিষ্ট উদাহরণ যোগ করলে উত্তরটি আরও গ্রহণযোগ্য হবে।",
-      developing: "প্রথমে সিদ্ধান্তটি বলুন, তারপর কারণ ও নির্দিষ্ট উদাহরণ দিন।",
-      retry: "সংক্ষিপ্ত হলেও ‘উত্তর, কারণ, নির্দিষ্ট উদাহরণ’—এই ক্রমে বলার চেষ্টা করুন।",
-      closing: "সবশেষে “本日はよろしくお願いします” যোগ করলে পরিচয়টি আরও স্বাভাবিক শোনাবে।"
-    }
-  }
+// 各質問の各採点項目に、評価結果と次に直す一点を対応させます。
+// 配列の各要素は [できたこと, 不足していること, 改善アドバイス] です。
+const QUESTION_GUIDANCE = {
+  ja: [
+    null,
+    [
+      ["日本で働きたい理由を述べています。", "日本で働きたい理由が含まれていません。", "日本で働きたい理由を一つ述べてください。"],
+      ["日本で挑戦・成長したい姿勢を示しています。", "日本で挑戦・成長したい姿勢が不足しています。", "日本で挑戦したいことか、成長したいことを一つ加えてください。"],
+      ["働きたい理由を具体的に説明しています。", "働きたい理由の具体的な説明が不足しています。", "日本で働きたいと思ったきっかけか経験を一つ加えてください。"],
+      ["日本で働く意欲を述べています。", "日本で働く意欲が不足しています。", "日本でどのように働きたいかを一つ述べてください。"]
+    ],
+    [
+      ["当社を志望する理由を述べています。", "当社を志望する理由が含まれていません。", "当社を志望する理由を一つ述べてください。"],
+      ["この会社を選んだ理由を述べています。", "この会社を選んだ理由が不足しています。", "会社の理念・商品・サービス・技術のうち、魅力を感じた点を一つ挙げてください。"],
+      ["入社に向けた前向きな姿勢を示しています。", "入社に向けた前向きな姿勢が不足しています。", "この会社で挑戦したいことを一つ加えてください。"],
+      ["入社後に働き、貢献する意欲を述べています。", "入社後の意欲が不足しています。", "入社後にどのように貢献したいかを一つ述べてください。"]
+    ],
+    [
+      ["一番頑張った仕事や勉強の内容を述べています。", "何を一番頑張ったかが含まれていません。", "一番頑張った仕事・勉強を一つ挙げてください。"],
+      ["期間・目標・担当などの具体的な情報を述べています。", "頑張ったことの具体的な情報が不足しています。", "期間・目標・担当のいずれかを一つ加えてください。"],
+      ["努力や工夫の内容を述べています。", "どのように努力・工夫したかが不足しています。", "続けた練習や工夫を一つ述べてください。"],
+      ["努力による成長や達成を述べています。", "努力した結果や成長が不足しています。", "努力してできるようになったことを一つ述べてください。"]
+    ],
+    [
+      ["自分の強みを述べています。", "自分の強みが含まれていません。", "責任感・協力・継続力など、自分の強みを一つ述べてください。"],
+      ["強みが表れた経験を具体的に述べています。", "強みを示す具体例が不足しています。", "学校・仕事・アルバイトで強みが表れた経験を一つ加えてください。"],
+      ["強みを仕事でどう活かすか述べています。", "強みの仕事での活かし方が不足しています。", "その強みを仕事でどう活かすかを一つ述べてください。"],
+      ["強みを活かして努力・貢献する姿勢を示しています。", "強みを活かす前向きな姿勢が不足しています。", "強みを活かして頑張りたいことを一つ加えてください。"]
+    ],
+    [
+      ["自分の弱みを述べています。", "自分の弱みが含まれていません。", "自分の弱みを一つ述べてください。"],
+      ["弱みが表れた場面を具体的に述べています。", "弱みを示す具体例が不足しています。", "その弱みが表れた場面を一つ加えてください。"],
+      ["弱みを改善する方法を述べています。", "弱みの改善方法が不足しています。", "練習・準備・確認など、実行している改善方法を一つ述べてください。"],
+      ["改善を続ける前向きな姿勢を示しています。", "改善を続ける姿勢が不足しています。", "改善のために続けていることを一つ加えてください。"]
+    ],
+    [
+      ["日本語で働くことへの不安の有無を述べています。", "日本語への不安があるかどうかを答えていません。", "日本語で働くことへの不安があるか、ないかを最初に述べてください。"],
+      ["不安がある・ない理由を述べています。", "不安についての理由が不足しています。", "不安がある理由、または不安がない理由を一つ述べてください。"],
+      ["勉強・練習・確認などの対策や根拠を述べています。", "不安への対策や根拠が不足しています。", "日本語の不安を減らすために行っていることを一つ述べてください。"],
+      ["日本語を学び続ける姿勢を示しています。", "日本語に対する前向きな姿勢が不足しています。", "日本語の勉強を今後どう続けるかを一つ加えてください。"]
+    ],
+    [
+      ["ミスを確認し、直す対応を述べています。", "ミスをした直後の対応が不足しています。", "ミスを確認してすぐに直すことを述べてください。"],
+      ["上司や先輩へ報告・相談することを述べています。", "ミスの報告・相談が不足しています。", "ミスを上司・先輩へ報告または相談することを加えてください。"],
+      ["原因確認やチェックによる再発防止を述べています。", "ミスの再発防止策が不足しています。", "同じミスを防ぐための確認方法を一つ述べてください。"],
+      ["ミスから学び改善する姿勢を示しています。", "ミスを改善につなげる姿勢が不足しています。", "ミスから学んで次に改善することを一つ加えてください。"]
+    ],
+    [
+      ["チームで大切にしていることを述べています。", "チームで大切にしていることが含まれていません。", "協力・報告・相談・尊重など、大切にしていることを一つ述べてください。"],
+      ["大切にする理由や具体例を述べています。", "理由や具体例が不足しています。", "それを大切にする理由か経験を一つ加えてください。"],
+      ["周囲と協力する姿勢を示しています。", "チームで協力する姿勢が不足しています。", "周囲を助ける、または役割を果たす姿勢を一つ述べてください。"],
+      ["話す・聞く・相談する意欲を示しています。", "コミュニケーションへの意欲が不足しています。", "チームでどのように声をかけ、話を聞くかを一つ述べてください。"]
+    ],
+    [
+      ["将来なりたい人材や目標を述べています。", "将来の目標が含まれていません。", "将来どのような人材になりたいかを一つ述べてください。"],
+      ["目標とする仕事・技術・役割を具体的に述べています。", "将来像の具体的な内容が不足しています。", "身につけたい技術や担いたい役割を一つ加えてください。"],
+      ["目標に向けた勉強・資格・経験などの行動を述べています。", "将来の目標に向けた行動が不足しています。", "目標のために行う勉強・資格取得・経験のいずれかを一つ述べてください。"],
+      ["学び続けて成長する意欲を示しています。", "成長を続ける意欲が不足しています。", "今後も身につけたいことを一つ加えてください。"]
+    ]
+  ],
+  vi: [
+    null,
+    [["Bạn đã nêu lý do muốn làm việc tại Nhật.","Bạn chưa nêu lý do muốn làm việc tại Nhật.","Hãy nêu một lý do bạn muốn làm việc tại Nhật."],["Bạn đã thể hiện mong muốn thử thách hoặc phát triển tại Nhật.","Bạn chưa thể hiện rõ thái độ tích cực.","Hãy thêm một điều bạn muốn thử thách hoặc phát triển tại Nhật."],["Bạn đã giải thích lý do cụ thể.","Lý do chưa có chi tiết cụ thể.","Hãy thêm một trải nghiệm hoặc cơ duyên khiến bạn muốn làm việc tại Nhật."],["Bạn đã thể hiện mong muốn làm việc tại Nhật.","Ý muốn làm việc tại Nhật chưa rõ.","Hãy nêu một cách bạn muốn làm việc hoặc đóng góp tại Nhật."]],
+    [["Bạn đã nêu lý do ứng tuyển vào công ty.","Bạn chưa nêu lý do ứng tuyển vào công ty.","Hãy nêu một lý do bạn ứng tuyển vào công ty."],["Bạn đã nêu lý do chọn công ty này.","Lý do chọn công ty này chưa rõ.","Hãy nêu một điểm hấp dẫn về triết lý, sản phẩm, dịch vụ hoặc công nghệ của công ty."],["Bạn đã thể hiện thái độ tích cực đối với việc gia nhập công ty.","Thái độ tích cực đối với việc gia nhập công ty chưa rõ.","Hãy thêm một điều bạn muốn thử thách tại công ty."],["Bạn đã nêu mong muốn làm việc và đóng góp sau khi vào công ty.","Mong muốn sau khi vào công ty chưa rõ.","Hãy nêu một cách bạn muốn đóng góp sau khi vào công ty."]],
+    [["Bạn đã nêu việc mình cố gắng nhất.","Bạn chưa nêu rõ việc mình cố gắng nhất.","Hãy nêu một việc hoặc môn học mà bạn đã cố gắng nhất."],["Bạn đã nêu thông tin cụ thể như thời gian, mục tiêu hoặc nhiệm vụ.","Thông tin cụ thể về việc đã cố gắng còn thiếu.","Hãy thêm thời gian, mục tiêu hoặc nhiệm vụ cụ thể."],["Bạn đã nêu cách mình nỗ lực hoặc cải tiến.","Cách bạn nỗ lực hoặc cải tiến chưa rõ.","Hãy nêu một việc luyện tập hoặc cách làm bạn đã duy trì."],["Bạn đã nêu kết quả hoặc sự trưởng thành.","Kết quả hoặc sự trưởng thành chưa rõ.","Hãy nêu một điều bạn làm được nhờ sự nỗ lực đó."]],
+    [["Bạn đã nêu điểm mạnh của mình.","Bạn chưa nêu điểm mạnh của mình.","Hãy nêu một điểm mạnh như trách nhiệm, hợp tác hoặc kiên trì."],["Bạn đã nêu trải nghiệm cụ thể thể hiện điểm mạnh.","Ví dụ cụ thể về điểm mạnh còn thiếu.","Hãy thêm một trải nghiệm ở trường, công việc hoặc việc làm thêm thể hiện điểm mạnh."],["Bạn đã nêu cách dùng điểm mạnh trong công việc.","Cách áp dụng điểm mạnh vào công việc còn thiếu.","Hãy nêu một cách bạn sẽ dùng điểm mạnh đó trong công việc."],["Bạn đã thể hiện ý muốn nỗ lực và đóng góp bằng điểm mạnh.","Thái độ tích cực trong việc phát huy điểm mạnh chưa rõ.","Hãy thêm một điều bạn muốn cố gắng bằng điểm mạnh đó."]],
+    [["Bạn đã nêu điểm yếu của mình.","Bạn chưa nêu điểm yếu của mình.","Hãy nêu một điểm yếu của bản thân."],["Bạn đã nêu tình huống cụ thể khi điểm yếu xuất hiện.","Ví dụ cụ thể về điểm yếu còn thiếu.","Hãy thêm một tình huống mà điểm yếu đó đã xuất hiện."],["Bạn đã nêu cách cải thiện điểm yếu.","Cách cải thiện điểm yếu còn thiếu.","Hãy nêu một cách bạn đang thực hiện như luyện tập, chuẩn bị hoặc kiểm tra."],["Bạn đã thể hiện thái độ tiếp tục cải thiện.","Thái độ tiếp tục cải thiện chưa rõ.","Hãy thêm một việc bạn đang tiếp tục làm để cải thiện."]],
+    [["Bạn đã nói rõ có hay không có lo lắng khi làm việc bằng tiếng Nhật.","Bạn chưa nói rõ mình có lo lắng về tiếng Nhật hay không.","Trước tiên, hãy nói rõ bạn có hay không có lo lắng khi làm việc bằng tiếng Nhật."],["Bạn đã nêu lý do có hoặc không có lo lắng.","Lý do về sự lo lắng còn thiếu.","Hãy nêu một lý do bạn có hoặc không có lo lắng."],["Bạn đã nêu biện pháp hoặc căn cứ như học, luyện tập hay xác nhận.","Biện pháp hoặc căn cứ để xử lý lo lắng còn thiếu.","Hãy nêu một việc bạn đang làm để giảm lo lắng về tiếng Nhật."],["Bạn đã thể hiện ý muốn tiếp tục học tiếng Nhật.","Thái độ tích cực đối với tiếng Nhật chưa rõ.","Hãy thêm một cách bạn sẽ tiếp tục học tiếng Nhật."]],
+    [["Bạn đã nêu cách xác nhận và sửa lỗi.","Cách xử lý ngay sau khi mắc lỗi còn thiếu.","Hãy nói rằng bạn sẽ xác nhận và sửa lỗi ngay."],["Bạn đã nêu việc báo cáo hoặc trao đổi với cấp trên.","Việc báo cáo hoặc trao đổi về lỗi còn thiếu.","Hãy thêm việc báo cáo hoặc trao đổi lỗi với cấp trên hay người đi trước."],["Bạn đã nêu cách tìm nguyên nhân và ngăn lỗi lặp lại.","Biện pháp ngăn lỗi tái diễn còn thiếu.","Hãy nêu một cách kiểm tra để ngăn lỗi tương tự."],["Bạn đã thể hiện thái độ học hỏi và cải thiện từ lỗi.","Thái độ biến lỗi thành sự cải thiện chưa rõ.","Hãy thêm một điều bạn sẽ học và cải thiện sau lỗi đó."]],
+    [["Bạn đã nêu điều mình coi trọng khi làm việc nhóm.","Bạn chưa nêu điều mình coi trọng khi làm việc nhóm.","Hãy nêu một điều như hợp tác, báo cáo, trao đổi hoặc tôn trọng."],["Bạn đã nêu lý do hoặc ví dụ cụ thể.","Lý do hoặc ví dụ cụ thể còn thiếu.","Hãy thêm một lý do hoặc trải nghiệm cho điều bạn coi trọng."],["Bạn đã thể hiện thái độ hợp tác với mọi người.","Thái độ hợp tác trong nhóm chưa rõ.","Hãy nêu một cách bạn giúp người khác hoặc hoàn thành vai trò của mình."],["Bạn đã thể hiện ý muốn nói, nghe và trao đổi.","Ý muốn giao tiếp trong nhóm chưa rõ.","Hãy nêu một cách bạn chủ động nói chuyện hoặc lắng nghe trong nhóm."]],
+    [["Bạn đã nêu mục tiêu hoặc hình mẫu nhân sự trong tương lai.","Bạn chưa nêu mục tiêu tương lai.","Hãy nêu một kiểu nhân sự mà bạn muốn trở thành trong tương lai."],["Bạn đã nêu cụ thể công việc, kỹ năng hoặc vai trò mong muốn.","Hình ảnh tương lai chưa đủ cụ thể.","Hãy thêm một kỹ năng muốn có hoặc một vai trò muốn đảm nhiệm."],["Bạn đã nêu hành động như học tập, lấy chứng chỉ hoặc tích lũy kinh nghiệm.","Hành động để đạt mục tiêu tương lai còn thiếu.","Hãy nêu một việc sẽ làm: học tập, lấy chứng chỉ hoặc tích lũy kinh nghiệm."],["Bạn đã thể hiện mong muốn tiếp tục học hỏi và phát triển.","Mong muốn tiếp tục phát triển chưa rõ.","Hãy thêm một điều bạn muốn tiếp tục học trong tương lai."]]
+  ],
+  bn: [
+    null,
+    [["আপনি জাপানে কাজ করতে চাওয়ার কারণ বলেছেন।","জাপানে কাজ করতে চাওয়ার কারণটি নেই।","জাপানে কাজ করতে চাওয়ার একটি কারণ বলুন।"],["আপনি জাপানে চ্যালেঞ্জ নেওয়া বা উন্নতি করার ইচ্ছা দেখিয়েছেন।","চ্যালেঞ্জ নেওয়া বা উন্নতি করার ইতিবাচক মনোভাবটি যথেষ্ট নয়।","জাপানে যে একটি বিষয়ে চ্যালেঞ্জ নিতে বা উন্নতি করতে চান তা যোগ করুন।"],["আপনি কাজ করতে চাওয়ার কারণটি নির্দিষ্টভাবে ব্যাখ্যা করেছেন।","কারণটির নির্দিষ্ট ব্যাখ্যা নেই।","জাপানে কাজ করতে চাওয়ার একটি অভিজ্ঞতা বা প্রেরণা যোগ করুন।"],["আপনি জাপানে কাজ করার ইচ্ছা প্রকাশ করেছেন।","জাপানে কাজ করার ইচ্ছাটি যথেষ্ট স্পষ্ট নয়।","জাপানে কীভাবে কাজ বা অবদান রাখতে চান তা একটি বলুন।"]],
+    [["আপনি এই কোম্পানিতে আবেদন করার কারণ বলেছেন।","এই কোম্পানিতে আবেদন করার কারণটি নেই।","এই কোম্পানিতে আবেদন করার একটি কারণ বলুন।"],["আপনি এই কোম্পানি বেছে নেওয়ার কারণ বলেছেন।","এই কোম্পানি বেছে নেওয়ার কারণটি যথেষ্ট নয়।","কোম্পানির নীতি, পণ্য, সেবা বা প্রযুক্তির একটি আকর্ষণীয় দিক বলুন।"],["আপনি কোম্পানিতে যোগ দেওয়ার ইতিবাচক মনোভাব দেখিয়েছেন।","কোম্পানিতে যোগ দেওয়ার ইতিবাচক মনোভাবটি যথেষ্ট নয়।","এই কোম্পানিতে যে একটি বিষয়ে চ্যালেঞ্জ নিতে চান তা যোগ করুন।"],["আপনি যোগ দেওয়ার পর কাজ ও অবদান রাখার ইচ্ছা বলেছেন।","যোগ দেওয়ার পরের ইচ্ছাটি যথেষ্ট নয়।","যোগ দেওয়ার পর কীভাবে অবদান রাখতে চান তা একটি বলুন।"]],
+    [["আপনি সবচেয়ে বেশি চেষ্টা করা কাজ বা পড়াশোনার কথা বলেছেন।","কোন কাজে সবচেয়ে বেশি চেষ্টা করেছেন তা নেই।","সবচেয়ে বেশি চেষ্টা করা একটি কাজ বা পড়াশোনার বিষয় বলুন।"],["আপনি সময়কাল, লক্ষ্য বা দায়িত্বের মতো নির্দিষ্ট তথ্য বলেছেন।","চেষ্টার নির্দিষ্ট তথ্য যথেষ্ট নয়।","সময়কাল, লক্ষ্য বা দায়িত্বের একটি নির্দিষ্ট তথ্য যোগ করুন।"],["আপনি প্রচেষ্টা বা কৌশলের কথা বলেছেন।","কীভাবে চেষ্টা বা কৌশল করেছেন তা যথেষ্ট নয়।","নিয়মিত করা একটি অনুশীলন বা কৌশল বলুন।"],["আপনি প্রচেষ্টার ফল বা উন্নতির কথা বলেছেন।","প্রচেষ্টার ফল বা উন্নতি যথেষ্ট নয়।","এই প্রচেষ্টায় যে একটি কাজ করতে পেরেছেন তা বলুন।"]],
+    [["আপনি নিজের শক্তির দিক বলেছেন।","নিজের শক্তির দিকটি নেই।","দায়িত্ববোধ, সহযোগিতা বা অধ্যবসায়ের মতো একটি শক্তির দিক বলুন।"],["আপনি শক্তির দিকটি দেখানো একটি নির্দিষ্ট অভিজ্ঞতা বলেছেন।","শক্তির দিকের নির্দিষ্ট উদাহরণ নেই।","স্কুল, কাজ বা খণ্ডকালীন চাকরির একটি অভিজ্ঞতা যোগ করুন যেখানে শক্তির দিকটি দেখা গেছে।"],["আপনি কাজে শক্তির দিকটি কীভাবে ব্যবহার করবেন তা বলেছেন।","কাজে শক্তির দিকটি ব্যবহারের উপায় নেই।","কাজে এই শক্তির দিকটি কীভাবে ব্যবহার করবেন তা একটি বলুন।"],["আপনি শক্তির দিক ব্যবহার করে চেষ্টা ও অবদান রাখার ইচ্ছা দেখিয়েছেন।","শক্তির দিক ব্যবহারের ইতিবাচক মনোভাবটি যথেষ্ট নয়।","এই শক্তির দিক দিয়ে যে একটি বিষয়ে চেষ্টা করতে চান তা যোগ করুন।"]],
+    [["আপনি নিজের দুর্বলতা বলেছেন।","নিজের দুর্বলতাটি নেই।","নিজের একটি দুর্বলতা বলুন।"],["আপনি দুর্বলতা দেখা দেওয়ার একটি নির্দিষ্ট পরিস্থিতি বলেছেন।","দুর্বলতার নির্দিষ্ট উদাহরণ নেই।","যে একটি পরিস্থিতিতে দুর্বলতাটি দেখা দিয়েছিল তা যোগ করুন।"],["আপনি দুর্বলতা উন্নত করার উপায় বলেছেন।","দুর্বলতা উন্নত করার উপায়টি নেই।","অনুশীলন, প্রস্তুতি বা যাচাইয়ের মতো বর্তমানে করা একটি উপায় বলুন।"],["আপনি উন্নতি চালিয়ে যাওয়ার মনোভাব দেখিয়েছেন।","উন্নতি চালিয়ে যাওয়ার মনোভাবটি যথেষ্ট নয়।","উন্নতির জন্য নিয়মিত করা একটি কাজ যোগ করুন।"]],
+    [["আপনি জাপানি ভাষায় কাজ নিয়ে উদ্বেগ আছে কি না বলেছেন।","জাপানি ভাষা নিয়ে উদ্বেগ আছে কি না বলেননি।","প্রথমে বলুন জাপানি ভাষায় কাজ করা নিয়ে আপনার উদ্বেগ আছে কি না।"],["আপনি উদ্বেগ থাকা বা না থাকার কারণ বলেছেন।","উদ্বেগের কারণটি যথেষ্ট নয়।","উদ্বেগ থাকা বা না থাকার একটি কারণ বলুন।"],["আপনি পড়াশোনা, অনুশীলন বা যাচাইয়ের মতো ব্যবস্থা বলেছেন।","উদ্বেগ মোকাবিলার ব্যবস্থা বা ভিত্তি যথেষ্ট নয়।","জাপানি ভাষার উদ্বেগ কমাতে বর্তমানে করা একটি কাজ বলুন।"],["আপনি জাপানি ভাষা শেখা চালিয়ে যাওয়ার ইচ্ছা দেখিয়েছেন।","জাপানি ভাষার প্রতি ইতিবাচক মনোভাবটি যথেষ্ট নয়।","জাপানি ভাষা শেখা কীভাবে চালিয়ে যাবেন তা একটি যোগ করুন।"]],
+    [["আপনি ভুল যাচাই ও সংশোধনের পদক্ষেপ বলেছেন।","ভুল করার পরপরই কী করবেন তা যথেষ্ট নয়।","ভুলটি যাচাই করে সঙ্গে সঙ্গে সংশোধন করবেন—এটি বলুন।"],["আপনি ঊর্ধ্বতন বা অভিজ্ঞ সহকর্মীকে রিপোর্ট বা পরামর্শ করার কথা বলেছেন।","ভুল রিপোর্ট বা পরামর্শ করার বিষয়টি নেই।","ভুলটি ঊর্ধ্বতন বা অভিজ্ঞ সহকর্মীকে রিপোর্ট বা পরামর্শ করার কথা যোগ করুন।"],["আপনি কারণ খোঁজা ও একই ভুল রোধের উপায় বলেছেন।","একই ভুল পুনরায় রোধের ব্যবস্থা নেই।","একই ভুল ঠেকাতে একটি যাচাই পদ্ধতি বলুন।"],["আপনি ভুল থেকে শেখা ও উন্নতির মনোভাব দেখিয়েছেন।","ভুলকে উন্নতিতে রূপ দেওয়ার মনোভাবটি যথেষ্ট নয়।","ভুল থেকে শিখে পরেরবার যে একটি বিষয় উন্নত করবেন তা যোগ করুন।"]],
+    [["আপনি দলে কাজ করার সময় গুরুত্বপূর্ণ একটি বিষয় বলেছেন।","দলে কাজ করার সময় গুরুত্বপূর্ণ বিষয়টি নেই।","সহযোগিতা, রিপোর্ট, পরামর্শ বা সম্মানের মতো একটি গুরুত্বপূর্ণ বিষয় বলুন।"],["আপনি কারণ বা নির্দিষ্ট উদাহরণ বলেছেন।","কারণ বা নির্দিষ্ট উদাহরণটি নেই।","গুরুত্বপূর্ণ মনে করার একটি কারণ বা অভিজ্ঞতা যোগ করুন।"],["আপনি অন্যদের সঙ্গে সহযোগিতার মনোভাব দেখিয়েছেন।","দলে সহযোগিতার মনোভাবটি যথেষ্ট নয়।","অন্যকে সাহায্য করা বা নিজের ভূমিকা পালন করার একটি উপায় বলুন।"],["আপনি কথা বলা, শোনা ও পরামর্শ করার ইচ্ছা দেখিয়েছেন।","দলে যোগাযোগের ইচ্ছাটি যথেষ্ট নয়।","দলে কীভাবে কথা বলবেন বা শুনবেন তার একটি উপায় বলুন।"]],
+    [["আপনি ভবিষ্যতের লক্ষ্য বা যে ধরনের কর্মী হতে চান তা বলেছেন।","ভবিষ্যতের লক্ষ্যটি নেই।","ভবিষ্যতে যে ধরনের কর্মী হতে চান তা একটি বলুন।"],["আপনি কাঙ্ক্ষিত কাজ, দক্ষতা বা ভূমিকা নির্দিষ্টভাবে বলেছেন।","ভবিষ্যৎ পরিকল্পনার নির্দিষ্ট তথ্য যথেষ্ট নয়।","যে একটি দক্ষতা অর্জন বা ভূমিকা পালন করতে চান তা যোগ করুন।"],["আপনি পড়াশোনা, যোগ্যতা বা অভিজ্ঞতার মতো পদক্ষেপ বলেছেন।","ভবিষ্যৎ লক্ষ্য অর্জনের পদক্ষেপটি নেই।","পড়াশোনা, যোগ্যতা অর্জন বা অভিজ্ঞতা নেওয়ার একটি পদক্ষেপ বলুন।"],["আপনি শেখা ও উন্নতি চালিয়ে যাওয়ার ইচ্ছা দেখিয়েছেন।","উন্নতি চালিয়ে যাওয়ার ইচ্ছাটি যথেষ্ট নয়।","ভবিষ্যতে শেখা চালিয়ে যেতে চান এমন একটি বিষয় যোগ করুন।"]]
+  ]
 };
 
-function guidanceLevel(totalScore) {
-  if (totalScore >= 90) return "excellent";
-  if (totalScore >= 70) return "good";
-  if (totalScore >= 50) return "developing";
-  return "retry";
+const GUIDANCE_LABELS = {
+  ja: { achieved: "できた", missing: "不足", complete: "直す項目はありません。" },
+  vi: { achieved: "Đã làm được", missing: "Còn thiếu", complete: "Không có mục nào cần sửa." },
+  bn: { achieved: "যা হয়েছে", missing: "যা কম আছে", complete: "সংশোধন করার কোনো বিষয় নেই।" }
+};
+
+function getIntroductionGuidance(language) {
+  const values = PROFILE_FIELDS.map((field) => profile[field.key]);
+  const messages = {
+    ja: [
+      [`名前「${values[0]}」を述べています。`, `名前「${values[0]}」が含まれていません。`, `名前「${values[0]}」を回答に入れてください。`],
+      [`年齢「${values[1]}歳」を述べています。`, `年齢「${values[1]}歳」が含まれていません。`, `年齢「${values[1]}歳」を回答に入れてください。`],
+      [`国籍「${values[2]}」を述べています。`, `国籍「${values[2]}」が含まれていません。`, `国籍「${values[2]}」を回答に入れてください。`],
+      [`日本語学校名「${values[3]}」を述べています。`, `日本語学校名「${values[3]}」が含まれていません。`, `日本語学校名「${values[3]}」を回答に入れてください。`]
+    ],
+    vi: [
+      [`Bạn đã nói tên “${values[0]}”.`, `Bạn chưa nói tên “${values[0]}”.`, `Hãy thêm tên “${values[0]}” vào câu trả lời.`],
+      [`Bạn đã nói tuổi “${values[1]}”.`, `Bạn chưa nói tuổi “${values[1]}”.`, `Hãy thêm tuổi “${values[1]}” vào câu trả lời.`],
+      [`Bạn đã nói quốc tịch “${values[2]}”.`, `Bạn chưa nói quốc tịch “${values[2]}”.`, `Hãy thêm quốc tịch “${values[2]}” vào câu trả lời.`],
+      [`Bạn đã nói tên trường Nhật ngữ “${values[3]}”.`, `Bạn chưa nói tên trường Nhật ngữ “${values[3]}”.`, `Hãy thêm tên trường “${values[3]}” vào câu trả lời.`]
+    ],
+    bn: [
+      [`আপনি নাম “${values[0]}” বলেছেন।`, `নাম “${values[0]}” বলা হয়নি।`, `উত্তরে নাম “${values[0]}” যোগ করুন।`],
+      [`আপনি বয়স “${values[1]}” বলেছেন।`, `বয়স “${values[1]}” বলা হয়নি।`, `উত্তরে বয়স “${values[1]}” যোগ করুন।`],
+      [`আপনি জাতীয়তা “${values[2]}” বলেছেন।`, `জাতীয়তা “${values[2]}” বলা হয়নি।`, `উত্তরে জাতীয়তা “${values[2]}” যোগ করুন।`],
+      [`আপনি জাপানি ভাষা স্কুলের নাম “${values[3]}” বলেছেন।`, `স্কুলের নাম “${values[3]}” বলা হয়নি।`, `উত্তরে স্কুলের নাম “${values[3]}” যোগ করুন।`]
+    ]
+  };
+  return messages[language] || messages.ja;
 }
 
-function renderScoreGuidance(totalScore, rawAnswer) {
-  const messages = SCORE_GUIDANCE[feedbackLanguage] || SCORE_GUIDANCE.ja;
-  const level = guidanceLevel(totalScore);
-  feedbackCommentEl.textContent = messages.feedback[level];
-  improvementAdviceEl.textContent = (
-    questions[currentIndex].type === "introduction" && !hasRecommendedClosingGreeting(rawAnswer)
-      ? messages.advice.closing
-      : messages.advice[level]
-  );
+function renderScoreGuidance(scores, maximum) {
+  const language = QUESTION_GUIDANCE[feedbackLanguage] ? feedbackLanguage : "ja";
+  const labels = GUIDANCE_LABELS[language];
+  const guidance = currentIndex === 0
+    ? getIntroductionGuidance(language)
+    : QUESTION_GUIDANCE[language][currentIndex];
+  const achievedThreshold = maximum * 0.8;
+
+  feedbackCommentEl.replaceChildren();
+  scores.forEach((score, index) => {
+    const achieved = score >= achievedThreshold;
+    const item = document.createElement("li");
+    item.className = achieved ? "achieved" : "missing";
+    item.textContent = `${achieved ? labels.achieved : labels.missing}：${guidance[index][achieved ? 0 : 1]}`;
+    feedbackCommentEl.appendChild(item);
+  });
+
+  const lowestScore = Math.min(...scores);
+  if (lowestScore >= achievedThreshold) {
+    improvementAdviceEl.textContent = labels.complete;
+    return;
+  }
+  const priorityIndex = scores.indexOf(lowestScore);
+  improvementAdviceEl.textContent = guidance[priorityIndex][2];
 }
 
-function renderScores(scores, rawAnswer) {
+function renderScores(scores) {
   endRecognitionSession();
   clearTimeout(questionSpeechTimer);
   window.speechSynthesis?.cancel();
@@ -671,7 +729,7 @@ function renderScores(scores, rawAnswer) {
     scoreListEl.append(row);
   });
 
-  renderScoreGuidance(totalScore, rawAnswer);
+  renderScoreGuidance(scores, maximum);
 
   scoreCardEl.classList.remove("hidden");
   renderProfileDebug();
@@ -1054,7 +1112,7 @@ editProfileBtn.addEventListener("click", editProfile);
 
 scoreAnswerBtn.addEventListener("click", () => {
   const rawAnswer = answerInputEl.value;
-  renderScores(scoreCurrentAnswer(rawAnswer), rawAnswer);
+  renderScores(scoreCurrentAnswer(rawAnswer));
 });
 
 retryQuestionBtn.addEventListener("click", () => {

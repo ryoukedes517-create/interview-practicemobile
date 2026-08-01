@@ -361,6 +361,32 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   line-height: 1.65;
 }
 
+.feedback-results {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedback-results li {
+  padding-left: 1.5em;
+  line-height: 1.55;
+  text-indent: -1.5em;
+}
+
+.feedback-results li::before {
+  display: inline-block;
+  width: 1.5em;
+  font-weight: 900;
+  text-indent: 0;
+}
+
+.feedback-results .achieved { color: #166534; }
+.feedback-results .achieved::before { content: "✓"; }
+.feedback-results .missing { color: var(--danger); }
+.feedback-results .missing::before { content: "!"; }
+
 .score-actions {
   display: grid;
   grid-template-columns: minmax(110px, 0.7fr) 1.3fr;
