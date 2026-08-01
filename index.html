@@ -17,6 +17,14 @@
 
       <form id="loginForm" novalidate>
         <div class="form-field">
+          <label for="feedbackLanguage">フィードバック言語</label>
+          <select id="feedbackLanguage" name="feedbackLanguage">
+            <option value="ja">日本語</option>
+            <option value="vi">ベトナム語</option>
+            <option value="bn">バングラ語</option>
+          </select>
+        </div>
+        <div class="form-field">
           <label for="loginPassword">パスワード</label>
           <input
             id="loginPassword"
@@ -109,7 +117,20 @@
           <p><strong id="totalScore">0</strong><span>/100</span></p>
         </div>
         <dl class="score-list" id="scoreList"></dl>
-        <button type="button" class="primary next-button" id="nextQuestion">次の質問へ</button>
+        <div class="score-guidance">
+          <div>
+            <h4>フィードバックコメント</h4>
+            <p id="feedbackComment"></p>
+          </div>
+          <div>
+            <h4>改善アドバイス</h4>
+            <p id="improvementAdvice"></p>
+          </div>
+        </div>
+        <div class="score-actions">
+          <button type="button" class="secondary" id="retryQuestion">戻る</button>
+          <button type="button" class="primary next-button" id="nextQuestion">次の質問へ</button>
+        </div>
       </section>
 
       <section class="debug-panel hidden" id="debugPanel" aria-live="polite">
@@ -119,6 +140,6 @@
     </section>
   </main>
 
-  <script src="script.js?v=20260729-profile-match-2"></script>
+  <script src="script.js?v=20260801-feedback-language"></script>
 </body>
 </html>

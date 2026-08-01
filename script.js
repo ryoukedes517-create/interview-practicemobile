@@ -42,12 +42,6 @@ const PROFILE_FIELDS = [
   }
 ];
 
-const CLOSING_GREETING_ITEM = {
-  key: "closingGreeting",
-  label: "最後の挨拶",
-  matchesAnswer: (answer) => hasClosingGreetingAtEnd(answer)
-};
-
 const questions = [
   {
     category: "第1問・自己紹介",
@@ -169,6 +163,7 @@ const $ = (id) => document.getElementById(id);
 const loginScreenEl = $("loginScreen");
 const loginFormEl = $("loginForm");
 const loginPasswordEl = $("loginPassword");
+const feedbackLanguageEl = $("feedbackLanguage");
 const loginErrorEl = $("loginError");
 const profileScreenEl = $("profileScreen");
 const interviewScreenEl = $("interviewScreen");
@@ -184,10 +179,13 @@ const questionTotalEl = $("questionTotal");
 const progressBarEl = $("progressBar");
 const answerInputEl = $("answerInput");
 const scoreAnswerBtn = $("scoreAnswer");
+const retryQuestionBtn = $("retryQuestion");
 const nextQuestionBtn = $("nextQuestion");
 const scoreCardEl = $("scoreCard");
 const totalScoreEl = $("totalScore");
 const scoreListEl = $("scoreList");
+const feedbackCommentEl = $("feedbackComment");
+const improvementAdviceEl = $("improvementAdvice");
 const debugPanelEl = $("debugPanel");
 const debugOutputEl = $("debugOutput");
 const voiceInputBtn = $("voiceInput");
@@ -197,6 +195,7 @@ const voiceStatusEl = $("voiceStatus");
 const voiceStatusTextEl = $("voiceStatusText");
 
 let profile = {};
+let feedbackLanguage = "ja";
 let currentIndex = 0;
 let recognition = null;
 let isListening = false;
@@ -337,21 +336,19 @@ function containsAge(answer, value) {
   return new RegExp(`(^|[^0-9])${escapedAge}\\s*(?:歳|才)(?=$|[^0-9])`).test(normalizedAnswer);
 }
 
-function hasClosingGreetingAtEnd(answer) {
+function hasRecommendedClosingGreeting(answer) {
   const normalizedAnswer = normalizeGreeting(answer);
   const greetings = [
+    "本日はどうぞよろしくお願いいたします",
+    "本日はどうぞよろしくお願いします",
+    "本日はよろしくお願いいたします",
+    "本日はよろしくお願いします",
     "どうぞよろしくお願いいたします",
     "どうぞよろしくお願いします",
     "よろしくお願いいたします",
-    "よろしくお願いします",
-    "ありがとうございました",
-    "以上です"
+    "よろしくお願いします"
   ];
-  const matched = greetings.some((greeting) => normalizedAnswer.endsWith(normalizeGreeting(greeting)));
-  if (DEBUG_PROFILE_MATCHING) {
-    profileMatchDebug.push({ field: "closingGreeting", expected: "最後の挨拶", source: answer, expectedNormalized: "よろしくお願いします等", sourceNormalized: normalizedAnswer, matched });
-  }
-  return matched;
+  return greetings.some((greeting) => normalizedAnswer.endsWith(normalizeGreeting(greeting)));
 }
 
 function normalizeGreeting(text) {
@@ -359,12 +356,11 @@ function normalizeGreeting(text) {
 }
 
 function getIntroductionItems() {
-  const profileItems = PROFILE_FIELDS.map((field) => ({
+  return PROFILE_FIELDS.map((field) => ({
     key: field.key,
     label: field.label,
     matchesAnswer: (answer) => field.matchesAnswer(answer, profile[field.key])
   }));
-  return [...profileItems, CLOSING_GREETING_ITEM];
 }
 
 function hasAny(text, keywords) {
@@ -552,7 +548,73 @@ function formatPoints(value) {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
-function renderScores(scores) {
+const SCORE_GUIDANCE = {
+  ja: {
+    feedback: {
+      excellent: "とてもよく答えられています。内容が具体的で、面接官に伝わりやすい回答です。",
+      good: "質問の要点に沿って答えられています。もう少し具体的にすると、さらに伝わりやすくなります。",
+      developing: "伝えたい内容は分かります。回答の順序を整理すると、より分かりやすくなります。",
+      retry: "質問に関係する内容を、もう少しはっきり伝えてみましょう。"
+    },
+    advice: {
+      excellent: "今の内容を保ち、ゆっくり、はっきり話すことを意識しましょう。",
+      good: "理由や具体例をもう一つ加えると、より説得力のある回答になります。",
+      developing: "最初に結論を言い、そのあとに理由や具体例を続けてみましょう。",
+      retry: "短くてもよいので、「答え・理由・具体例」の順で話してみましょう。",
+      closing: "最後に「本日はよろしくお願いします」をつけると、さらに自然です。"
+    }
+  },
+  vi: {
+    feedback: {
+      excellent: "Bạn trả lời rất tốt. Nội dung cụ thể và dễ hiểu đối với người phỏng vấn.",
+      good: "Bạn đã trả lời đúng trọng tâm. Nếu nói cụ thể hơn một chút, câu trả lời sẽ dễ hiểu hơn.",
+      developing: "Nội dung bạn muốn truyền đạt đã rõ. Sắp xếp lại thứ tự câu trả lời sẽ giúp người nghe dễ hiểu hơn.",
+      retry: "Hãy trình bày rõ hơn một chút những nội dung liên quan đến câu hỏi."
+    },
+    advice: {
+      excellent: "Hãy giữ nội dung hiện tại và chú ý nói chậm, rõ ràng.",
+      good: "Thêm một lý do hoặc ví dụ cụ thể sẽ làm câu trả lời thuyết phục hơn.",
+      developing: "Hãy nêu kết luận trước, sau đó trình bày lý do và ví dụ cụ thể.",
+      retry: "Dù ngắn cũng được, hãy nói theo thứ tự: câu trả lời, lý do, rồi ví dụ cụ thể.",
+      closing: "Cuối cùng, nếu thêm câu “本日はよろしくお願いします”, phần giới thiệu sẽ tự nhiên hơn."
+    }
+  },
+  bn: {
+    feedback: {
+      excellent: "আপনি খুব ভালোভাবে উত্তর দিয়েছেন। উত্তরটি নির্দিষ্ট এবং সাক্ষাৎকার গ্রহণকারীর কাছে সহজে বোধগম্য।",
+      good: "আপনি প্রশ্নের মূল বিষয় অনুযায়ী উত্তর দিয়েছেন। আরেকটু নির্দিষ্ট করে বললে উত্তরটি আরও পরিষ্কার হবে।",
+      developing: "আপনি যা বলতে চান তা বোঝা যাচ্ছে। উত্তরের ক্রম গুছিয়ে বললে আরও সহজে বোঝা যাবে।",
+      retry: "প্রশ্নের সঙ্গে সম্পর্কিত বিষয়গুলো আরেকটু স্পষ্টভাবে বলার চেষ্টা করুন।"
+    },
+    advice: {
+      excellent: "বর্তমান বিষয়বস্তু বজায় রেখে ধীরে ও স্পষ্টভাবে বলার চেষ্টা করুন।",
+      good: "আরও একটি কারণ বা নির্দিষ্ট উদাহরণ যোগ করলে উত্তরটি আরও গ্রহণযোগ্য হবে।",
+      developing: "প্রথমে সিদ্ধান্তটি বলুন, তারপর কারণ ও নির্দিষ্ট উদাহরণ দিন।",
+      retry: "সংক্ষিপ্ত হলেও ‘উত্তর, কারণ, নির্দিষ্ট উদাহরণ’—এই ক্রমে বলার চেষ্টা করুন।",
+      closing: "সবশেষে “本日はよろしくお願いします” যোগ করলে পরিচয়টি আরও স্বাভাবিক শোনাবে।"
+    }
+  }
+};
+
+function guidanceLevel(totalScore) {
+  if (totalScore >= 90) return "excellent";
+  if (totalScore >= 70) return "good";
+  if (totalScore >= 50) return "developing";
+  return "retry";
+}
+
+function renderScoreGuidance(totalScore, rawAnswer) {
+  const messages = SCORE_GUIDANCE[feedbackLanguage] || SCORE_GUIDANCE.ja;
+  const level = guidanceLevel(totalScore);
+  feedbackCommentEl.textContent = messages.feedback[level];
+  improvementAdviceEl.textContent = (
+    questions[currentIndex].type === "introduction" && !hasRecommendedClosingGreeting(rawAnswer)
+      ? messages.advice.closing
+      : messages.advice[level]
+  );
+}
+
+function renderScores(scores, rawAnswer) {
   endRecognitionSession();
   clearTimeout(questionSpeechTimer);
   window.speechSynthesis?.cancel();
@@ -561,7 +623,8 @@ function renderScores(scores) {
   const introductionItems = isIntroduction ? getIntroductionItems() : [];
   const criteria = isIntroduction ? introductionItems.map((item) => item.label) : current.criteria;
   const maximum = isIntroduction ? 100 / criteria.length : 25;
-  totalScoreEl.textContent = String(Math.round(scores.reduce((sum, score) => sum + score, 0)));
+  const totalScore = Math.round(scores.reduce((sum, score) => sum + score, 0));
+  totalScoreEl.textContent = String(totalScore);
   scoreListEl.replaceChildren();
 
   criteria.forEach((criterion, index) => {
@@ -584,6 +647,8 @@ function renderScores(scores) {
     row.append(label, value);
     scoreListEl.append(row);
   });
+
+  renderScoreGuidance(totalScore, rawAnswer);
 
   scoreCardEl.classList.remove("hidden");
   renderProfileDebug();
@@ -944,6 +1009,7 @@ loginFormEl.addEventListener("submit", (event) => {
 
   loginErrorEl.classList.add("hidden");
   loginPasswordEl.setAttribute("aria-invalid", "false");
+  feedbackLanguage = feedbackLanguageEl.value;
   loginPasswordEl.value = "";
   unlockApp();
 });
@@ -964,7 +1030,13 @@ profileFormEl.addEventListener("submit", (event) => {
 editProfileBtn.addEventListener("click", editProfile);
 
 scoreAnswerBtn.addEventListener("click", () => {
-  renderScores(scoreCurrentAnswer(answerInputEl.value));
+  const rawAnswer = answerInputEl.value;
+  renderScores(scoreCurrentAnswer(rawAnswer), rawAnswer);
+});
+
+retryQuestionBtn.addEventListener("click", () => {
+  renderQuestion();
+  unlockSpeechSynthesis();
 });
 
 nextQuestionBtn.addEventListener("click", () => {

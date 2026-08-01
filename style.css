@@ -30,7 +30,7 @@ body {
   overscroll-behavior-y: none;
 }
 
-button, input, textarea { font: inherit; }
+button, input, select, textarea { font: inherit; }
 
 .app {
   min-height: 100vh;
@@ -104,13 +104,18 @@ h1 {
 
 .form-field label { font-weight: 800; }
 
+#loginForm {
+  display: grid;
+  gap: 18px;
+}
+
 .required-mark {
   margin-left: 0.45em;
   color: var(--danger);
   font-size: 0.78rem;
 }
 
-input {
+input, select {
   width: 100%;
   min-height: 48px;
   padding: 11px 13px;
@@ -119,6 +124,8 @@ input {
   background: #fff;
   color: var(--text);
 }
+
+select { cursor: pointer; }
 
 input[aria-invalid="true"] { border-color: var(--danger); background: #fff6f5; }
 
@@ -291,7 +298,7 @@ button {
 }
 
 button:hover:not(:disabled) { border-color: var(--accent); }
-button:focus-visible, input:focus { outline: 3px solid var(--focus); outline-offset: 2px; }
+button:focus-visible, input:focus, select:focus, textarea:focus { outline: 3px solid var(--focus); outline-offset: 2px; }
 button:disabled { cursor: not-allowed; opacity: 0.55; }
 
 .secondary { border-color: #a5d2dc; background: var(--soft); color: var(--accent-dark); }
@@ -329,6 +336,36 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .score-list .match-status { display: block; margin-top: 2px; font-size: 0.78rem; font-weight: 700; }
 .score-list .matched { color: #157347; }
 .score-list .missing { color: var(--danger); }
+
+.score-guidance {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 18px;
+}
+
+.score-guidance > div {
+  padding: 13px 14px;
+  border: 1px solid #cde8ed;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.score-guidance h4 {
+  margin: 0 0 6px;
+  color: var(--accent-dark);
+  font-size: 0.88rem;
+}
+
+.score-guidance p {
+  margin: 0;
+  line-height: 1.65;
+}
+
+.score-actions {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.7fr) 1.3fr;
+  gap: 10px;
+}
 
 .next-button { width: 100%; }
 .hidden { display: none; }
@@ -382,7 +419,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .question-box { margin-bottom: 16px; padding: 17px 15px; }
   .question-box h2 { font-size: clamp(1.15rem, 5.2vw, 1.45rem); }
   textarea { min-height: 116px; font-size: 16px; }
-  input { font-size: 16px; }
+  input, select { font-size: 16px; }
   button { width: 100%; }
   .score-card { padding: 17px 15px; }
 }
