@@ -208,6 +208,11 @@ let microphonePermissionGranted = false;
 let speechSynthesisUnlocked = false;
 let recognitionHadFatalError = false;
 let profileMatchDebug = [];
+// 採点とは完全に分離した、画面非表示の内部メモです。
+// 気になる点がない回答は保存せず、この内容を点数計算やユーザー向け表示には使用しません。
+const internalEvaluationLog = [];
+let lastSpeechActivityAt = null;
+let detectedLongPauses = [];
 // 開発時は URL の末尾に ?debugProfileMatch を付けると照合内容を表示できます。
 const DEBUG_PROFILE_MATCHING = new URLSearchParams(window.location.search).has("debugProfileMatch");
 const QUESTION_SPEECH_DELAY = 2000;
@@ -444,6 +449,96 @@ function scoreCurrentAnswer(rawAnswer) {
   return scores;
 }
 
+function countFillers(rawAnswer) {
+  const fillerPattern = /(?:あー+|えー+|えっと+|そのー+|あのー+|うーん+)/g;
+  return String(rawAnswer ?? "").match(fillerPattern)?.length ?? 0;
+}
+
+function hasClearlyExcessiveFillers(rawAnswer) {
+  const textLength = normalizeForComparison(rawAnswer).length;
+  const fillerCount = countFillers(rawAnswer);
+  return fillerCount >= 8 || (fillerCount >= 5 && textLength <= fillerCount * 35);
+}
+
+function getInternalCoverageScores(rawAnswer) {
+  const current = questions[currentIndex];
+  if (current.type !== "introduction") {
+    const answer = normalize(rawAnswer);
+    return current.groups.map((keywords, index) => scoreEvidence(answer, keywords, index));
+  }
+
+  // 内部判定によって、任意のプロフィール照合デバッグ表示を変えないように退避します。
+  const savedDebug = profileMatchDebug;
+  profileMatchDebug = [];
+  const scores = scoreIntroduction(rawAnswer);
+  profileMatchDebug = savedDebug;
+  return scores;
+}
+
+function hasClearlyExcessiveLength(rawAnswer, scores) {
+  const text = String(rawAnswer ?? "").trim();
+  if (normalizeForComparison(text).length < 300) return false;
+
+  const current = questions[currentIndex];
+  const maximum = current.type === "introduction" ? 100 / scores.length : 25;
+  const adequatelyAnswered = scores.filter((score) => score >= maximum * 0.8).length;
+  const requiredCoverage = Math.max(1, Math.ceil(scores.length * 0.75));
+  const sentences = text.split(/(?<=[。！？!?\n])/).filter((sentence) => sentence.trim());
+
+  if (adequatelyAnswered < requiredCoverage || sentences.length < 6) return false;
+
+  // 必要項目を答え終えた後に、項目との関連を確認できない説明が長く続く場合だけ記録します。
+  for (let end = 2; end <= sentences.length - 2; end += 1) {
+    const mainAnswer = sentences.slice(0, end).join("");
+    const extraExplanation = sentences.slice(end).join("");
+    if (normalizeForComparison(extraExplanation).length < 140) continue;
+
+    const mainScores = getInternalCoverageScores(mainAnswer);
+    const mainCoverage = mainScores.filter((score) => score >= maximum * 0.8).length;
+    if (mainCoverage < requiredCoverage) continue;
+
+    const extraScores = getInternalCoverageScores(extraExplanation);
+    const extraHasRelevantPoint = extraScores.some((score) => score >= maximum * 0.8);
+    if (!extraHasRelevantPoint) return true;
+  }
+
+  return false;
+}
+
+function evaluateInternalNotes(rawAnswer, scores) {
+  const notes = [];
+
+  if (hasClearlyExcessiveFillers(rawAnswer)) {
+    notes.push("フィラーが少し多く聞こえました。少し間を取って話すと、より落ち着いて伝わります。");
+  }
+
+  const conspicuousPauses = detectedLongPauses.filter((duration) => duration >= 12000);
+  const repeatedLongPauses = detectedLongPauses.filter((duration) => duration >= 8000);
+  if (conspicuousPauses.length >= 1 || repeatedLongPauses.length >= 2) {
+    notes.push("長い間が少し目立ちました。話す内容を短く整理してから答えると、より伝わりやすくなります。");
+  }
+
+  if (hasClearlyExcessiveLength(rawAnswer, scores)) {
+    notes.push("必要な内容は答えられています。関係するポイントに絞って簡潔にすると、より伝わります。");
+  }
+
+  const existingIndex = internalEvaluationLog.findIndex((entry) => entry.questionIndex === currentIndex);
+  if (existingIndex >= 0) internalEvaluationLog.splice(existingIndex, 1);
+  if (!notes.length) return;
+
+  internalEvaluationLog.push({
+    questionIndex: currentIndex,
+    question: questions[currentIndex].question,
+    notes: [...notes]
+  });
+}
+
+// 管理側の保存処理を後から接続できる読み取り専用フックです。通常画面からは呼ばれません。
+window.__getInterviewInternalNotes = () => internalEvaluationLog.map((entry) => ({
+  ...entry,
+  notes: [...entry.notes]
+}));
+
 function renderProfileDebug() {
   if (!DEBUG_PROFILE_MATCHING || questions[currentIndex].type !== "introduction") {
     debugPanelEl.classList.add("hidden");
@@ -548,6 +643,8 @@ function renderQuestion() {
   const current = questions[currentIndex];
   endRecognitionSession();
   recognitionAlternatives = [];
+  lastSpeechActivityAt = null;
+  detectedLongPauses = [];
   clearTimeout(questionSpeechTimer);
   window.speechSynthesis?.cancel();
   categoryEl.textContent = current.category;
@@ -945,6 +1042,13 @@ function setupSpeechRecognition() {
   recognition.addEventListener("result", (event) => {
     if (!isAcceptingSpeech || answerInputEl.disabled) return;
 
+    const now = performance.now();
+    if (lastSpeechActivityAt !== null) {
+      const silenceDuration = now - lastSpeechActivityAt;
+      if (silenceDuration >= 8000) detectedLongPauses.push(silenceDuration);
+    }
+    lastSpeechActivityAt = now;
+
     let finalText = "";
     for (let i = event.resultIndex; i < event.results.length; i += 1) {
       const result = event.results[i];
@@ -1179,7 +1283,9 @@ editProfileBtn.addEventListener("click", editProfile);
 
 scoreAnswerBtn.addEventListener("click", () => {
   const rawAnswer = answerInputEl.value;
-  renderScores(scoreCurrentAnswer(rawAnswer));
+  const scores = scoreCurrentAnswer(rawAnswer);
+  evaluateInternalNotes(rawAnswer, scores);
+  renderScores(scores);
 });
 
 retryQuestionBtn.addEventListener("click", () => {
