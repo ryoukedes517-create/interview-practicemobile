@@ -851,8 +851,117 @@ const UPDATED_QUESTION_GUIDANCE = {
     ]
   ]
 };
-UPDATED_QUESTION_GUIDANCE.vi = UPDATED_QUESTION_GUIDANCE.ja;
-UPDATED_QUESTION_GUIDANCE.bn = UPDATED_QUESTION_GUIDANCE.ja;
+// 表示専用の翻訳です。質問・照合条件・点数計算には使用しません。
+// 各項目は [採点項目名, できたこと, 不足していること, アドバイス] です。
+const TRANSLATED_SCORE_ITEMS = {
+  vi: [
+    null,
+    [
+      ["Nêu lý do ứng tuyển", "Bạn đã nêu lý do ứng tuyển.", "Bạn chưa nêu lý do ứng tuyển.", "Hãy nêu một lý do ứng tuyển."],
+      ["Giải thích lý do", "Bạn đã giải thích lý do.", "Phần giải thích lý do còn thiếu.", "Hãy thêm một lời giải thích vì sao bạn nghĩ như vậy."],
+      ["Thể hiện tinh thần tích cực", "Bạn đã thể hiện tinh thần tích cực.", "Tinh thần tích cực chưa rõ.", "Hãy thêm mong muốn cố gắng hoặc phát triển bản thân."]
+    ],
+    [
+      ["Nêu lý do chọn công ty", "Bạn đã nêu lý do chọn công ty.", "Bạn chưa nêu lý do chọn công ty.", "Hãy nêu một lý do chọn công ty này."],
+      ["Giải thích lý do lựa chọn", "Bạn đã giải thích lý do lựa chọn.", "Phần giải thích lý do lựa chọn còn thiếu.", "Hãy thêm một điểm hấp dẫn hoặc phù hợp với bản thân."],
+      ["Thể hiện mong muốn gia nhập công ty", "Bạn đã thể hiện mong muốn gia nhập công ty.", "Mong muốn gia nhập công ty chưa rõ.", "Hãy thêm điều bạn muốn cố gắng thực hiện sau khi vào công ty."]
+    ],
+    [
+      ["Nêu điều đã cố gắng", "Bạn đã nêu điều mình cố gắng.", "Bạn chưa nêu điều mình cố gắng.", "Hãy nêu một điều bạn đã cố gắng nhất từ trước đến nay."],
+      ["Giải thích nội dung", "Bạn đã giải thích nội dung.", "Phần giải thích về việc đã cố gắng còn thiếu.", "Hãy thêm thời gian, việc đã làm và cách bạn cố gắng."],
+      ["Nêu điều đã học hoặc sự trưởng thành", "Bạn đã nêu điều đã học hoặc sự trưởng thành.", "Điều đã học hoặc sự trưởng thành chưa rõ.", "Hãy thêm điều bạn học được hoặc sự trưởng thành từ trải nghiệm đó."]
+    ],
+    [
+      ["Nêu điểm mạnh", "Bạn đã nêu điểm mạnh.", "Bạn chưa nêu điểm mạnh.", "Hãy nêu một điểm mạnh của bản thân."],
+      ["Nêu lý do hoặc ví dụ cụ thể", "Bạn đã nêu lý do hoặc ví dụ cụ thể.", "Lý do hoặc ví dụ cụ thể còn thiếu.", "Hãy thêm một lý do hoặc ví dụ thể hiện điểm mạnh đó."],
+      ["Nêu cách vận dụng điểm mạnh vào công việc", "Bạn đã nêu cách vận dụng điểm mạnh vào công việc.", "Cách vận dụng vào công việc còn thiếu.", "Hãy thêm cách bạn muốn vận dụng điểm mạnh đó vào công việc."]
+    ],
+    [
+      ["Báo cáo ngay với cấp trên", "Bạn đã nói sẽ báo cáo ngay với cấp trên.", "Bạn chưa nói sẽ báo cáo ngay với cấp trên.", "Hãy nói rằng bạn sẽ báo cáo ngay với cấp trên khi mắc lỗi."],
+      ["Tự suy nghĩ về nguyên nhân", "Bạn đã nói sẽ tự suy nghĩ về nguyên nhân.", "Việc tự suy nghĩ về nguyên nhân chưa rõ.", "Hãy thêm việc suy nghĩ về nguyên nhân gây ra lỗi."],
+      ["Lắng nghe chỉ dẫn của cấp trên và xử lý", "Bạn đã nói sẽ nghe chỉ dẫn của cấp trên và xử lý.", "Việc nghe chỉ dẫn của cấp trên và xử lý còn thiếu.", "Hãy thêm rằng bạn sẽ nghe chỉ dẫn của cấp trên và xử lý."]
+    ],
+    [
+      ["Thành thật nêu điểm yếu", "Bạn đã thành thật nêu điểm yếu.", "Bạn chưa thành thật nêu điểm yếu.", "Hãy thành thật nêu một điểm yếu của bản thân."],
+      ["Nêu cách đang cố gắng cải thiện", "Bạn đã nêu điều đang làm để cải thiện.", "Điều đang làm để cải thiện còn thiếu.", "Hãy thêm việc bạn đang làm để cải thiện điểm yếu."],
+      ["Kết thúc với thái độ tích cực", "Bạn đã kết thúc với thái độ tích cực.", "Phần kết thúc tích cực còn thiếu.", "Hãy thêm lời tích cực về mong muốn cố gắng hoặc cải thiện trong tương lai."]
+    ],
+    [
+      ["Nêu điều quan trọng khi làm việc nhóm", "Bạn đã nêu điều quan trọng khi làm việc nhóm.", "Bạn chưa nêu điều quan trọng khi làm việc nhóm.", "Hãy nêu một điều quan trọng như hợp tác, báo cáo hoặc trao đổi."],
+      ["Nêu lý do hoặc ví dụ cụ thể", "Bạn đã nêu lý do hoặc ví dụ cụ thể.", "Lý do hoặc ví dụ cụ thể còn thiếu.", "Hãy thêm một lý do hoặc ví dụ cho thấy vì sao điều đó quan trọng."],
+      ["Nêu cách muốn thực hiện trong công việc", "Bạn đã nêu cách muốn thực hiện trong công việc.", "Cách thực hiện trong công việc còn thiếu.", "Hãy thêm cách bạn muốn thực hiện điều đó trong công việc."]
+    ],
+    [["Trả lời có hoặc không có lo lắng", "Bạn đã trả lời có hoặc không có lo lắng.", "Câu trả lời có hoặc không có lo lắng còn thiếu.", "Trước tiên, hãy trả lời rằng bạn có hoặc không có lo lắng."]],
+    [
+      ["Nêu điều khiến bạn lo lắng", "Bạn đã nêu điều khiến mình lo lắng.", "Điều khiến bạn lo lắng chưa rõ.", "Hãy thêm điều bạn lo lắng, như hội thoại, kính ngữ hoặc thuật ngữ chuyên môn."],
+      ["Nêu việc đang làm để khắc phục", "Bạn đã nêu việc đang làm để khắc phục.", "Việc đang làm để giảm lo lắng còn thiếu.", "Hãy thêm việc hiện đang làm như học, luyện tập, xác nhận hoặc đặt câu hỏi."]
+    ],
+    [
+      ["Nêu mục tiêu tương lai", "Bạn đã nêu mục tiêu tương lai.", "Bạn chưa nêu mục tiêu tương lai.", "Hãy nêu một mục tiêu tương lai."],
+      ["Nêu việc đang làm để đạt mục tiêu", "Bạn đã nêu việc đang làm để đạt mục tiêu.", "Việc đang làm để đạt mục tiêu còn thiếu.", "Hãy thêm một việc bạn đang học hoặc nỗ lực thực hiện."],
+      ["Thể hiện tinh thần tích cực", "Bạn đã thể hiện tinh thần tích cực.", "Tinh thần tích cực chưa rõ.", "Hãy thêm mong muốn cố gắng hoặc phát triển trong tương lai."]
+    ]
+  ],
+  bn: [
+    null,
+    [
+      ["আবেদনের কারণ বলা", "আপনি আবেদনের কারণ বলেছেন।", "আবেদনের কারণ বলা হয়নি।", "আবেদনের একটি কারণ বলুন।"],
+      ["কারণ ব্যাখ্যা করা", "আপনি কারণ ব্যাখ্যা করেছেন।", "কারণের ব্যাখ্যা যথেষ্ট নয়।", "কেন এমন মনে করেন তার একটি ব্যাখ্যা যোগ করুন।"],
+      ["ইতিবাচক মনোভাব প্রকাশ করা", "আপনি ইতিবাচক মনোভাব প্রকাশ করেছেন।", "ইতিবাচক মনোভাব যথেষ্ট স্পষ্ট নয়।", "চেষ্টা বা উন্নতি করার ইচ্ছা যোগ করুন।"]
+    ],
+    [
+      ["কোম্পানি বেছে নেওয়ার কারণ বলা", "আপনি কোম্পানি বেছে নেওয়ার কারণ বলেছেন।", "কোম্পানি বেছে নেওয়ার কারণ বলা হয়নি।", "এই কোম্পানি বেছে নেওয়ার একটি কারণ বলুন।"],
+      ["বেছে নেওয়ার কারণ ব্যাখ্যা করা", "আপনি বেছে নেওয়ার কারণ ব্যাখ্যা করেছেন।", "বেছে নেওয়ার কারণের ব্যাখ্যা যথেষ্ট নয়।", "আপনার কাছে আকর্ষণীয় বা নিজের সঙ্গে মানানসই একটি দিক যোগ করুন।"],
+      ["কোম্পানিতে যোগ দেওয়ার আগ্রহ প্রকাশ করা", "আপনি কোম্পানিতে যোগ দেওয়ার আগ্রহ প্রকাশ করেছেন।", "কোম্পানিতে যোগ দেওয়ার আগ্রহ যথেষ্ট স্পষ্ট নয়।", "যোগ দেওয়ার পরে যে কাজে চেষ্টা করতে চান তা যোগ করুন।"]
+    ],
+    [
+      ["যে কাজে চেষ্টা করেছেন তা বলা", "আপনি যে কাজে চেষ্টা করেছেন তা বলেছেন।", "যে কাজে চেষ্টা করেছেন তা বলা হয়নি।", "এ পর্যন্ত সবচেয়ে বেশি চেষ্টা করেছেন এমন একটি কাজ বলুন।"],
+      ["কাজের বিবরণ ব্যাখ্যা করা", "আপনি কাজের বিবরণ ব্যাখ্যা করেছেন।", "চেষ্টা করা কাজের ব্যাখ্যা যথেষ্ট নয়।", "কখন, কী কাজে এবং কীভাবে চেষ্টা করেছেন তা যোগ করুন।"],
+      ["শেখা বিষয় বা উন্নতি বলা", "আপনি শেখা বিষয় বা উন্নতির কথা বলেছেন।", "শেখা বিষয় বা উন্নতির কথা যথেষ্ট নয়।", "সেই অভিজ্ঞতা থেকে কী শিখেছেন বা কীভাবে উন্নতি করেছেন তা যোগ করুন।"]
+    ],
+    [
+      ["নিজের ভালো দিক বলা", "আপনি নিজের ভালো দিক বলেছেন।", "নিজের ভালো দিক বলা হয়নি।", "নিজের একটি ভালো দিক বলুন।"],
+      ["কারণ বা নির্দিষ্ট উদাহরণ বলা", "আপনি কারণ বা নির্দিষ্ট উদাহরণ বলেছেন।", "কারণ বা নির্দিষ্ট উদাহরণ যথেষ্ট নয়।", "সেই ভালো দিক বোঝায় এমন একটি কারণ বা উদাহরণ যোগ করুন।"],
+      ["ভালো দিক কাজে লাগানোর উপায় বলা", "আপনি ভালো দিক কাজে লাগানোর উপায় বলেছেন।", "কাজে লাগানোর উপায় যথেষ্ট স্পষ্ট নয়।", "সেই ভালো দিক কাজে কীভাবে ব্যবহার করতে চান তা যোগ করুন।"]
+    ],
+    [
+      ["সঙ্গে সঙ্গে ঊর্ধ্বতনকে জানানো", "আপনি সঙ্গে সঙ্গে ঊর্ধ্বতনকে জানাবেন বলেছেন।", "সঙ্গে সঙ্গে ঊর্ধ্বতনকে জানানোর কথা বলা হয়নি।", "ভুল করলে সঙ্গে সঙ্গে ঊর্ধ্বতনকে জানাবেন বলুন।"],
+      ["নিজে কারণ নিয়ে চিন্তা করা", "আপনি নিজে কারণ নিয়ে চিন্তা করবেন বলেছেন।", "নিজে কারণ নিয়ে চিন্তা করার কথা যথেষ্ট নয়।", "কেন ভুল হয়েছে তার কারণ নিয়ে চিন্তা করার কথা যোগ করুন।"],
+      ["ঊর্ধ্বতনের নির্দেশ শুনে ব্যবস্থা নেওয়া", "আপনি ঊর্ধ্বতনের নির্দেশ শুনে ব্যবস্থা নেবেন বলেছেন।", "ঊর্ধ্বতনের নির্দেশ শুনে ব্যবস্থা নেওয়ার কথা যথেষ্ট নয়।", "ঊর্ধ্বতনের নির্দেশ শুনে ব্যবস্থা নেবেন বলে যোগ করুন।"]
+    ],
+    [
+      ["সৎভাবে দুর্বলতা বলা", "আপনি সৎভাবে দুর্বলতা বলেছেন।", "দুর্বলতা সৎভাবে বলা হয়নি।", "নিজের একটি দুর্বলতা সৎভাবে বলুন।"],
+      ["উন্নতির জন্য করা চেষ্টা বলা", "আপনি উন্নতির জন্য কী করছেন তা বলেছেন।", "উন্নতির জন্য কী করছেন তা যথেষ্ট নয়।", "দুর্বলতা কাটাতে কী করছেন তা যোগ করুন।"],
+      ["ইতিবাচকভাবে শেষ করা", "আপনি ইতিবাচকভাবে শেষ করেছেন।", "ইতিবাচকভাবে শেষ করার অংশ যথেষ্ট নয়।", "ভবিষ্যতে চেষ্টা বা উন্নতি করার ইচ্ছা নিয়ে ইতিবাচক কথা যোগ করুন।"]
+    ],
+    [
+      ["দলগত কাজে গুরুত্বপূর্ণ বিষয় বলা", "আপনি দলগত কাজে গুরুত্বপূর্ণ বিষয় বলেছেন।", "দলগত কাজে গুরুত্বপূর্ণ বিষয় বলা হয়নি।", "সহযোগিতা, রিপোর্ট বা পরামর্শের মতো একটি গুরুত্বপূর্ণ বিষয় বলুন।"],
+      ["কারণ বা নির্দিষ্ট উদাহরণ বলা", "আপনি কারণ বা নির্দিষ্ট উদাহরণ বলেছেন।", "কারণ বা নির্দিষ্ট উদাহরণ যথেষ্ট নয়।", "সেটি কেন গুরুত্বপূর্ণ তার একটি কারণ বা উদাহরণ যোগ করুন।"],
+      ["কাজে কীভাবে বাস্তবায়ন করবেন তা বলা", "আপনি কাজে কীভাবে বাস্তবায়ন করতে চান তা বলেছেন।", "কাজে বাস্তবায়নের উপায় যথেষ্ট নয়।", "কাজে সেটি কীভাবে বাস্তবায়ন করতে চান তা যোগ করুন।"]
+    ],
+    [["উদ্বেগ আছে বা নেই বলে উত্তর দেওয়া", "আপনি উদ্বেগ আছে বা নেই বলে উত্তর দিয়েছেন।", "উদ্বেগ আছে বা নেই—এই উত্তরটি যথেষ্ট নয়।", "প্রথমে উত্তর দিন যে আপনার উদ্বেগ আছে বা নেই।"]],
+    [
+      ["কী নিয়ে উদ্বেগ তা বলা", "আপনি কী নিয়ে উদ্বিগ্ন তা বলেছেন।", "কী নিয়ে উদ্বেগ তা যথেষ্ট স্পষ্ট নয়।", "কথোপকথন, সম্মানসূচক ভাষা বা কারিগরি শব্দের মতো কী নিয়ে উদ্বেগ তা যোগ করুন।"],
+      ["উদ্বেগ কমাতে কী করছেন তা বলা", "আপনি উদ্বেগ কমাতে কী করছেন তা বলেছেন।", "উদ্বেগ কমাতে কী করছেন তা যথেষ্ট নয়।", "পড়াশোনা, অনুশীলন, যাচাই বা প্রশ্ন করার মতো বর্তমানে করা কাজ যোগ করুন।"]
+    ],
+    [
+      ["ভবিষ্যতের লক্ষ্য বলা", "আপনি ভবিষ্যতের লক্ষ্য বলেছেন।", "ভবিষ্যতের লক্ষ্য বলা হয়নি।", "ভবিষ্যতের একটি লক্ষ্য বলুন।"],
+      ["লক্ষ্যের জন্য বর্তমানে করা কাজ বলা", "আপনি লক্ষ্যের জন্য বর্তমানে কী করছেন তা বলেছেন।", "লক্ষ্যের জন্য বর্তমানে কী করছেন তা যথেষ্ট নয়।", "বর্তমানে করা পড়াশোনা বা চেষ্টার একটি বিষয় যোগ করুন।"],
+      ["ইতিবাচক মনোভাব প্রকাশ করা", "আপনি ইতিবাচক মনোভাব প্রকাশ করেছেন।", "ইতিবাচক মনোভাব যথেষ্ট স্পষ্ট নয়।", "ভবিষ্যতে চেষ্টা বা উন্নতি করার ইচ্ছা যোগ করুন।"]
+    ]
+  ]
+};
+for (const language of ["vi", "bn"]) {
+  UPDATED_QUESTION_GUIDANCE[language] = TRANSLATED_SCORE_ITEMS[language].map((items) => (
+    items && items.map((item) => item.slice(1))
+  ));
+}
+
+const SCORE_DISPLAY_TEXT = {
+  ja: { total: "合計点", feedback: "フィードバックコメント", advice: "改善アドバイス", matched: "一致", unmatched: "不一致", points: "点", fields: { name: "名前", age: "年齢", nationality: "国籍(出身国)", schoolName: "学校名" } },
+  vi: { total: "Tổng điểm", feedback: "Nhận xét", advice: "Gợi ý cải thiện", matched: "Khớp", unmatched: "Không khớp", points: "điểm", fields: { name: "Tên", age: "Tuổi", nationality: "Quốc tịch (nước xuất thân)", schoolName: "Tên trường" } },
+  bn: { total: "মোট নম্বর", feedback: "মূল্যায়নের মন্তব্য", advice: "উন্নতির পরামর্শ", matched: "মিলেছে", unmatched: "মেলেনি", points: "নম্বর", fields: { name: "নাম", age: "বয়স", nationality: "জাতীয়তা (নিজ দেশ)", schoolName: "স্কুলের নাম" } }
+};
 
 const GUIDANCE_LABELS = {
   ja: { achieved: "できた", missing: "不足", complete: "素晴らしいです。この調子で自信を持って面接に臨みましょう！" },
@@ -953,6 +1062,12 @@ function renderScores(scores) {
   const isIntroduction = current.type === "introduction";
   const introductionItems = isIntroduction ? getIntroductionItems() : [];
   const criteria = isIntroduction ? introductionItems.map((item) => item.label) : current.criteria;
+  const language = SCORE_DISPLAY_TEXT[feedbackLanguage] ? feedbackLanguage : "ja";
+  const display = SCORE_DISPLAY_TEXT[language];
+  scoreCardEl.setAttribute("lang", language);
+  $("scoreTitle").textContent = display.total;
+  $("feedbackHeading").textContent = display.feedback;
+  $("adviceHeading").textContent = display.advice;
   const maximum = 100 / criteria.length;
   const totalScore = Math.round(scores.reduce((sum, score) => sum + score, 0));
   totalScoreEl.textContent = String(totalScore);
@@ -962,16 +1077,18 @@ function renderScores(scores) {
     const row = document.createElement("div");
     const label = document.createElement("dt");
     const value = document.createElement("dd");
-    label.textContent = criterion;
+    label.textContent = language === "ja" ? criterion : isIntroduction
+      ? display.fields[introductionItems[index].key]
+      : TRANSLATED_SCORE_ITEMS[language][currentIndex][index][0];
     value.innerHTML = `<strong>${formatPoints(scores[index])}</strong><span>/${formatPoints(maximum)}</span>`;
 
     if (isIntroduction) {
       const matched = scores[index] > 0;
       const status = document.createElement("span");
       status.className = `match-status ${matched ? "matched" : "missing"}`;
-      status.textContent = matched
-        ? `一致（+${formatPoints(maximum)}点）`
-        : `不一致（-${formatPoints(maximum)}点）`;
+      status.textContent = language === "ja"
+        ? (matched ? `一致（+${formatPoints(maximum)}点）` : `不一致（-${formatPoints(maximum)}点）`)
+        : `${matched ? display.matched : display.unmatched} (${matched ? "+" : "-"}${formatPoints(maximum)} ${display.points})`;
       value.appendChild(status);
     }
 
@@ -1339,6 +1456,7 @@ function showMicrophoneStartError(error) {
 document.querySelectorAll("[data-language]").forEach((button) => {
   button.addEventListener("click", () => {
     const language = button.dataset.language;
+    feedbackLanguage = SCORE_DISPLAY_TEXT[language] ? language : "ja";
     const text = INTERVIEW_SELECTION_TEXT[language];
     document.documentElement.lang = language;
     $("interviewTypeEyebrow").textContent = text.app;
@@ -1365,7 +1483,6 @@ document.querySelectorAll("[data-interview-type]").forEach((button) => {
     interviewType = button.dataset.interviewType;
     questions = interviewType === "school" ? schoolQuestions : employmentQuestions;
     document.documentElement.lang = "ja";
-    feedbackLanguage = "ja";
     createProfileFields();
     $("appTitle").textContent = interviewType === "school" ? "日本語学校入学面接" : "就職面接採点";
     document.querySelectorAll("#profileScreen .eyebrow, #interviewScreen .eyebrow").forEach((element) => {
@@ -1388,7 +1505,6 @@ loginFormEl.addEventListener("submit", (event) => {
 
   loginErrorEl.classList.add("hidden");
   loginPasswordEl.setAttribute("aria-invalid", "false");
-  feedbackLanguage = "ja";
   loginPasswordEl.value = "";
   unlockApp();
 });
