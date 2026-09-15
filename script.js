@@ -42,7 +42,7 @@ const PROFILE_FIELDS = [
   }
 ];
 
-const questions = [
+const employmentQuestions = [
   {
     category: "第1問・自己紹介",
     question: "自己紹介をしてください。",
@@ -157,11 +157,36 @@ const questions = [
   }
 ];
 
+const schoolQuestions = [
+  {
+    category: "第1問・自己紹介",
+    question: "こんにちは。名前、年齢、国籍を順番に話してください",
+    type: "introduction"
+  }
+];
+
+const INTERVIEW_SELECTION_TEXT = {
+  ja: { app: "面接練習アプリ", title: "面接の種類を選択", employment: "就職面接", school: "日本語学校入学面接", back: "言語を選び直す" },
+  vi: { app: "Ứng dụng luyện phỏng vấn", title: "Chọn loại phỏng vấn", employment: "Phỏng vấn xin việc", school: "Phỏng vấn nhập học trường Nhật ngữ", back: "Chọn lại ngôn ngữ" },
+  bn: { app: "সাক্ষাৎকার অনুশীলন অ্যাপ", title: "সাক্ষাৎকারের ধরন বেছে নিন", employment: "চাকরির সাক্ষাৎকার", school: "জাপানি ভাষা স্কুলে ভর্তির সাক্ষাৎকার", back: "ভাষা আবার বেছে নিন" },
+  id: { app: "Aplikasi latihan wawancara", title: "Pilih jenis wawancara", employment: "Wawancara kerja", school: "Wawancara masuk sekolah bahasa Jepang", back: "Pilih ulang bahasa" },
+  th: { app: "แอปฝึกสัมภาษณ์", title: "เลือกประเภทการสัมภาษณ์", employment: "สัมภาษณ์งาน", school: "สัมภาษณ์เข้าเรียนโรงเรียนสอนภาษาญี่ปุ่น", back: "เลือกภาษาใหม่" }
+};
+
+let interviewType = "employment";
+let questions = employmentQuestions;
+
+function getProfileFields() {
+  return interviewType === "school"
+    ? PROFILE_FIELDS.filter((field) => field.key !== "schoolName")
+    : PROFILE_FIELDS;
+}
+
 const $ = (id) => document.getElementById(id);
 const loginScreenEl = $("loginScreen");
 const loginFormEl = $("loginForm");
 const loginPasswordEl = $("loginPassword");
-const feedbackLanguageEl = $("feedbackLanguage");
+
 const loginErrorEl = $("loginError");
 const profileScreenEl = $("profileScreen");
 const interviewScreenEl = $("interviewScreen");
@@ -228,7 +253,7 @@ function showLoginError(message) {
 function unlockApp() {
   loginScreenEl.classList.add("hidden");
   profileScreenEl.classList.remove("hidden");
-  profileFormEl.elements[PROFILE_FIELDS[0].key].focus();
+  profileFormEl.elements[getProfileFields()[0].key].focus();
 }
 
 function normalize(text) {
@@ -398,7 +423,7 @@ function containsAge(answer, value) {
 }
 
 function getIntroductionItems() {
-  return PROFILE_FIELDS.map((field) => ({
+  return getProfileFields().map((field) => ({
     key: field.key,
     label: field.label,
     matchesAnswer: (answer) => field.matchesAnswer(answer, profile[field.key])
@@ -563,7 +588,7 @@ function renderProfileDebug() {
 function createProfileFields() {
   const fragment = document.createDocumentFragment();
 
-  PROFILE_FIELDS.forEach((field) => {
+  getProfileFields().forEach((field) => {
     const wrapper = document.createElement("div");
     wrapper.className = "form-field";
 
@@ -590,14 +615,14 @@ function createProfileFields() {
     fragment.appendChild(wrapper);
   });
 
-  profileFieldsEl.appendChild(fragment);
+  profileFieldsEl.replaceChildren(fragment);
 }
 
 function readProfile() {
   const nextProfile = {};
   let firstInvalidInput = null;
 
-  PROFILE_FIELDS.forEach((field) => {
+  getProfileFields().forEach((field) => {
     const input = profileFormEl.elements[field.key];
     const value = input.value.trim();
     const isValid = value !== "" && input.checkValidity();
@@ -616,7 +641,7 @@ function readProfile() {
 }
 
 function renderProfileSummary() {
-  profileSummaryEl.textContent = PROFILE_FIELDS.map((field) => {
+  profileSummaryEl.textContent = getProfileFields().map((field) => {
     const value = profile[field.key];
     return field.formatValue ? field.formatValue(value) : value;
   }).join(" ／ ");
@@ -635,12 +660,12 @@ function editProfile() {
   clearTimeout(questionSpeechTimer);
   window.speechSynthesis?.cancel();
   endRecognitionSession();
-  PROFILE_FIELDS.forEach((field) => {
+  getProfileFields().forEach((field) => {
     profileFormEl.elements[field.key].value = profile[field.key] || "";
   });
   interviewScreenEl.classList.add("hidden");
   profileScreenEl.classList.remove("hidden");
-  profileFormEl.elements[PROFILE_FIELDS[0].key].focus();
+  profileFormEl.elements[getProfileFields()[0].key].focus();
 }
 
 function renderQuestion() {
@@ -836,7 +861,7 @@ const GUIDANCE_LABELS = {
 };
 
 function getIntroductionGuidance(language) {
-  const values = PROFILE_FIELDS.map((field) => profile[field.key]);
+  const values = getProfileFields().map((field) => profile[field.key]);
   const messages = {
     ja: [
       [`名前「${values[0]}」を述べています。`, `名前「${values[0]}」が含まれていません。`, `名前「${values[0]}」を回答に入れてください。`],
@@ -857,7 +882,8 @@ function getIntroductionGuidance(language) {
       [`আপনি জাপানি ভাষা স্কুলের নাম “${values[3]}” বলেছেন।`, `স্কুলের নাম “${values[3]}” বলা হয়নি।`, `উত্তরে স্কুলের নাম “${values[3]}” যোগ করুন।`]
     ]
   };
-  return messages[language] || messages.ja;
+  const guidance = messages[language] || messages.ja;
+  return interviewType === "school" ? guidance.slice(0, getProfileFields().length) : guidance;
 }
 
 function makeFriendlyAdvice(message, language) {
@@ -1310,6 +1336,47 @@ function showMicrophoneStartError(error) {
   voiceInputBtn.disabled = false;
 }
 
+document.querySelectorAll("[data-language]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const language = button.dataset.language;
+    const text = INTERVIEW_SELECTION_TEXT[language];
+    document.documentElement.lang = language;
+    $("interviewTypeEyebrow").textContent = text.app;
+    $("interviewTypeTitle").textContent = text.title;
+    $("employmentInterview").textContent = text.employment;
+    $("schoolInterview").textContent = text.school;
+    $("changeLanguage").textContent = text.back;
+    $("languageScreen").classList.add("hidden");
+    $("interviewTypeScreen").classList.remove("hidden");
+    $("interviewTypeTitle").focus();
+  });
+});
+
+$("changeLanguage").addEventListener("click", () => {
+  $("interviewTypeScreen").classList.add("hidden");
+  $("languageScreen").classList.remove("hidden");
+  const previousLanguage = document.documentElement.lang;
+  document.documentElement.lang = "ja";
+  document.querySelector(`[data-language="${previousLanguage}"]`).focus();
+});
+
+document.querySelectorAll("[data-interview-type]").forEach((button) => {
+  button.addEventListener("click", () => {
+    interviewType = button.dataset.interviewType;
+    questions = interviewType === "school" ? schoolQuestions : employmentQuestions;
+    document.documentElement.lang = "ja";
+    feedbackLanguage = "ja";
+    createProfileFields();
+    $("appTitle").textContent = interviewType === "school" ? "日本語学校入学面接" : "就職面接採点";
+    document.querySelectorAll("#profileScreen .eyebrow, #interviewScreen .eyebrow").forEach((element) => {
+      element.textContent = interviewType === "school" ? "日本語学校入学面接" : "日本語学校 N3レベル";
+    });
+    $("interviewTypeScreen").classList.add("hidden");
+    loginScreenEl.classList.remove("hidden");
+    loginPasswordEl.focus();
+  });
+});
+
 loginFormEl.addEventListener("submit", (event) => {
   event.preventDefault();
 
@@ -1321,7 +1388,7 @@ loginFormEl.addEventListener("submit", (event) => {
 
   loginErrorEl.classList.add("hidden");
   loginPasswordEl.setAttribute("aria-invalid", "false");
-  feedbackLanguage = feedbackLanguageEl.value;
+  feedbackLanguage = "ja";
   loginPasswordEl.value = "";
   unlockApp();
 });

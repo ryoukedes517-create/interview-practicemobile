@@ -4,26 +4,44 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#155e75">
-  <title>N3 就職面接採点</title>
+  <title>面接練習アプリ</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main class="app">
-    <section class="practice-panel login-panel" id="loginScreen" aria-labelledby="loginTitle">
+    <section class="practice-panel login-panel" id="languageScreen" aria-labelledby="languageTitle">
+      <header class="login-header">
+        <p class="eyebrow">面接練習アプリ</p>
+        <h1 id="languageTitle">言語を選択 / Choose your language</h1>
+      </header>
+      <div class="selection-options">
+        <button type="button" class="secondary" data-language="ja" lang="ja">日本語</button>
+        <button type="button" class="secondary" data-language="vi" lang="vi">Tiếng Việt（ベトナム語）</button>
+        <button type="button" class="secondary" data-language="bn" lang="bn">বাংলা（ベンガル語）</button>
+        <button type="button" class="secondary" data-language="id" lang="id">Bahasa Indonesia（インドネシア語）</button>
+        <button type="button" class="secondary" data-language="th" lang="th">ภาษาไทย（タイ語）</button>
+      </div>
+    </section>
+
+    <section class="practice-panel login-panel hidden" id="interviewTypeScreen" aria-labelledby="interviewTypeTitle">
+      <header class="login-header">
+        <p class="eyebrow" id="interviewTypeEyebrow"></p>
+        <h1 id="interviewTypeTitle" tabindex="-1"></h1>
+      </header>
+      <div class="selection-options">
+        <button type="button" class="primary" id="employmentInterview" data-interview-type="employment"></button>
+        <button type="button" class="secondary" id="schoolInterview" data-interview-type="school"></button>
+        <button type="button" id="changeLanguage"></button>
+      </div>
+    </section>
+
+    <section class="practice-panel login-panel hidden" id="loginScreen" aria-labelledby="loginTitle">
       <header class="login-header">
         <p class="eyebrow">面接練習アプリ</p>
         <h1 id="loginTitle">ログイン</h1>
       </header>
 
       <form id="loginForm" novalidate>
-        <div class="form-field">
-          <label for="feedbackLanguage">フィードバック言語</label>
-          <select id="feedbackLanguage" name="feedbackLanguage">
-            <option value="ja">日本語</option>
-            <option value="vi">ベトナム語</option>
-            <option value="bn">バングラ語</option>
-          </select>
-        </div>
         <div class="form-field">
           <label for="loginPassword">パスワード</label>
           <input
@@ -140,6 +158,6 @@
     </section>
   </main>
 
-  <script src="script.js?v=20260802-internal-evaluation"></script>
+  <script src="script.js?v=20260915-interview-types"></script>
 </body>
 </html>
