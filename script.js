@@ -162,6 +162,102 @@ const schoolQuestions = [
     category: "第1問・自己紹介",
     question: "こんにちは。名前、年齢、国籍を順番に話してください",
     type: "introduction"
+  },
+  {
+    category: "第2問・日本への留学理由",
+    question: "なぜ日本に留学したいですか？",
+    criteria: ["日本に留学したい理由が言えているか", "日本で勉強したいこと、または将来の目標が言えているか"],
+    schoolKey: "studyReason",
+    checks: [
+      ["留学", "日本", "勉強", "学び", "学習", "日本語", "文化", "技術", "専門", "将来", "夢", "目標"],
+      ["勉強", "学び", "学習", "日本語", "専門", "大学", "進学", "将来", "夢", "目標", "仕事", "なりたい"]
+    ],
+    type: "schoolAdmission"
+  },
+  {
+    category: "第3問・学校を選んだ理由",
+    question: "なぜこの学校を選びましたか？",
+    criteria: ["この学校を選んだ理由が言えているか", "学校について調べた内容や学校の特徴に触れられているか"],
+    schoolKey: "schoolChoice",
+    checks: [
+      ["学校", "選び", "選ん", "理由", "勉強", "先生", "授業", "友達", "場所", "環境", "良い", "いい", "好き"],
+      ["ホームページ", "先生", "授業", "進学", "サポート", "場所", "環境", "カリキュラム", "学生", "寮", "特徴", "調べ"]
+    ],
+    type: "schoolAdmission"
+  },
+  {
+    category: "第4問・日本語学習で難しいこと",
+    question: "日本語の勉強で何が一番難しいですか？",
+    criteria: ["何が難しいのかを答えられているか", "難しいことに対して、どのように勉強しているかを言えているか"],
+    schoolKey: "difficultStudy",
+    checks: [
+      ["漢字", "文法", "会話", "聞き取り", "聞く", "話す", "読む", "書く", "発音", "ことば", "言葉", "難しい"],
+      ["勉強", "練習", "毎日", "先生", "話し", "話す", "読む", "書く", "覚え", "復習", "頑張"]
+    ],
+    type: "schoolAdmission"
+  },
+  {
+    category: "第5問・日本語の学習歴",
+    question: "日本語をどのくらい勉強しましたか？",
+    criteria: ["どのくらいの期間、日本語を勉強したか言えているか", "どこで、どのように勉強したか言えているか"],
+    schoolKey: "studyHistory",
+    checks: [
+      ["年", "年間", "か月", "ヶ月", "月", "半年", "週間", "日", "勉強しました", "勉強して"],
+      ["学校", "日本語学校", "先生", "クラス", "家", "オンライン", "会話", "漢字", "文法", "勉強しました", "習いました"]
+    ],
+    type: "schoolAdmission"
+  },
+  {
+    category: "第6問・卒業後の進路",
+    question: "卒業したら何をしたいですか？",
+    criteria: ["日本語学校を卒業した後の進路を答えられているか", "進学先で何を勉強したいかなど、具体的な内容まで答えられているか"],
+    schoolKey: "afterGraduation",
+    checks: [
+      ["専門学校", "大学", "進学", "学校", "勉強したい", "行きたい", "入学", "卒業", "仕事", "就職"],
+      ["自動車", "介護", "IT", "ビジネス", "観光", "ホテル", "料理", "看護", "デザイン", "何を", "勉強したい"]
+    ],
+    type: "schoolAdmission"
+  },
+  {
+    category: "第7問・学費と生活費",
+    question: "日本での学費や生活費は誰が払いますか？",
+    criteria: ["誰が払うのか、または費用をどうするつもりなのかが伝わっているか"],
+    schoolKey: "expenses",
+    checks: [
+      ["父", "母", "両親", "親", "家族", "兄", "姉", "私", "自分", "払", "支払", "仕事", "働", "アルバイト"]
+    ],
+    type: "schoolAdmission"
+  },
+  {
+    category: "第8問・日本で心配なこと",
+    question: "日本で心配なことはありますか？",
+    criteria: ["心配なことがある場合は何が心配か、ない場合は「ありません」と答えられているか"],
+    schoolKey: "worries",
+    checks: [
+      ["心配", "不安", "日本語", "生活", "お金", "友達", "勉強", "仕事", "ありません", "ないです", "ない"]
+    ],
+    type: "schoolAdmission"
+  },
+  {
+    category: "第9問・日本にいる家族や親戚",
+    question: "日本に家族や親戚はいますか？",
+    criteria: ["日本に家族や親戚がいるか、いないかを答えられているか"],
+    schoolKey: "familyInJapan",
+    checks: [
+      ["はい", "います", "いる", "兄", "姉", "弟", "妹", "父", "母", "おじ", "おば", "家族", "親戚", "いいえ", "いません", "いない"]
+    ],
+    type: "schoolAdmission"
+  },
+  {
+    category: "第10問・アルバイトの予定",
+    question: "日本でアルバイトをしますか？",
+    criteria: ["アルバイトの予定について答えられているか", "勉強を優先する意識まで伝えられているか"],
+    schoolKey: "partTimeJob",
+    checks: [
+      ["はい", "いいえ", "します", "しません", "アルバイト", "仕事", "働"],
+      ["勉強", "学校", "授業", "優先", "大切", "頑張", "日本語"]
+    ],
+    type: "schoolAdmission"
   }
 ];
 
@@ -457,11 +553,52 @@ function scoreIntroduction(text) {
   return items.map((item) => item.matchesAnswer(text) ? pointsPerItem : 0);
 }
 
+function scoreSchoolAdmissionAnswer(rawAnswer) {
+  const answer = normalize(rawAnswer);
+  const current = questions[currentIndex];
+  const maximum = 100 / current.checks.length;
+  const scores = current.checks.map((keywords) => (
+    hasAny(answer, keywords) ? maximum : 0
+  ));
+
+  if (current.schoolKey === "studyReason") {
+    const hasStudyOrGoal = scores[1] >= maximum;
+    const hasCautionReason = hasAny(answer, ["お金", "稼ぎ", "かせぎ", "アルバイト", "住みたい", "住む"]);
+    const hasJapanOnly = hasAny(answer, ["日本が好き", "日本好き"]) && !hasStudyOrGoal;
+    if (hasCautionReason && !hasStudyOrGoal) {
+      return scores.map((score) => Math.min(score, maximum * 0.4));
+    }
+    if (hasJapanOnly) {
+      scores[0] = Math.min(scores[0], maximum * 0.6);
+    }
+  }
+
+  if (current.schoolKey === "schoolChoice") {
+    const hasOnlyCautionReason = hasAny(answer, ["安い", "有名"])
+      && !hasAny(answer, ["先生", "授業", "進学", "サポート", "環境", "カリキュラム", "学生", "寮", "ホームページ", "調べ"]);
+    if (hasOnlyCautionReason) {
+      scores[0] = Math.min(scores[0], maximum * 0.5);
+      scores[1] = 0;
+    }
+  }
+
+  if (current.schoolKey === "partTimeJob") {
+    const looksWorkFirst = hasAny(answer, ["たくさん働", "毎日働", "いっぱい働"])
+      && !hasAny(answer, ["勉強", "学校", "授業", "優先", "頑張"]);
+    if (looksWorkFirst) {
+      scores[1] = 0;
+    }
+  }
+
+  return scores;
+}
+
 function scoreCurrentAnswer(rawAnswer) {
   const answer = normalize(rawAnswer);
   const current = questions[currentIndex];
   profileMatchDebug = [];
   if (current.type === "introduction") return scoreIntroduction(rawAnswer);
+  if (current.type === "schoolAdmission") return scoreSchoolAdmissionAnswer(rawAnswer);
 
   let scores = current.groups.map((keywords, index) => scoreEvidence(answer, keywords, index));
   const maximum = 100 / current.groups.length;
@@ -488,6 +625,7 @@ function hasClearlyExcessiveFillers(rawAnswer) {
 
 function getInternalCoverageScores(rawAnswer) {
   const current = questions[currentIndex];
+  if (current.type === "schoolAdmission") return scoreSchoolAdmissionAnswer(rawAnswer);
   if (current.type !== "introduction") {
     const answer = normalize(rawAnswer);
     const maximum = 100 / current.groups.length;
@@ -957,16 +1095,210 @@ for (const language of ["vi", "bn"]) {
   ));
 }
 
+const SCHOOL_TRANSLATED_SCORE_ITEMS = {
+  ja: [
+    null,
+    [
+      ["日本に留学したい理由が言えているか", "日本に留学したい理由が伝わっています。", "日本に留学したい理由がまだ分かりません。", "日本で勉強したい理由を短く言いましょう。"],
+      ["日本で勉強したいこと、または将来の目標が言えているか", "勉強したいこと、または将来の目標が伝わっています。", "勉強したいこと、または将来の目標が不足しています。", "日本で何を勉強したいか、将来どうしたいかを一つ言いましょう。"]
+    ],
+    [
+      ["この学校を選んだ理由が言えているか", "この学校を選んだ理由が伝わっています。", "この学校を選んだ理由がまだ分かりません。", "この学校を選んだ理由を短く言いましょう。"],
+      ["学校について調べた内容や学校の特徴に触れられているか", "学校の特徴や調べた内容に触れています。", "学校の特徴や調べた内容が不足しています。", "先生、授業、進学サポートなど、良いと思った点を一つ言いましょう。"]
+    ],
+    [
+      ["何が難しいのかを答えられているか", "何が難しいのか答えられています。", "何が難しいのかがまだ分かりません。", "漢字、文法、会話、聞き取りなど、難しいことを一つ言いましょう。"],
+      ["難しいことに対して、どのように勉強しているかを言えているか", "どのように勉強しているか伝わっています。", "どのように勉強しているかが不足しています。", "毎日勉強します、先生と話します、などを一つ言いましょう。"]
+    ],
+    [
+      ["どのくらいの期間、日本語を勉強したか言えているか", "日本語を勉強した期間が伝わっています。", "日本語を勉強した期間が不足しています。", "何年、何か月など、勉強した期間を言いましょう。"],
+      ["どこで、どのように勉強したか言えているか", "どこで、どのように勉強したか伝わっています。", "どこで、どのように勉強したかが不足しています。", "学校で、家で、会話を、漢字を、などを一つ言いましょう。"]
+    ],
+    [
+      ["日本語学校を卒業した後の進路を答えられているか", "卒業後の進路が伝わっています。", "卒業後の進路がまだ分かりません。", "専門学校、大学、就職など、卒業後にしたいことを言いましょう。"],
+      ["進学先で何を勉強したいかなど、具体的な内容まで答えられているか", "卒業後に何を勉強したいか具体的に伝わっています。", "具体的に何を勉強したいかが不足しています。", "自動車、介護、ITなど、勉強したいことを一つ言いましょう。"]
+    ],
+    [
+      ["誰が払うのか、または費用をどうするつもりなのかが伝わっているか", "学費や生活費を誰が払うか伝わっています。", "学費や生活費を誰が払うかがまだ分かりません。", "父、母、両親、私、仕事します、などを言いましょう。"]
+    ],
+    [
+      ["心配なことがある場合は何が心配か、ない場合は「ありません」と答えられているか", "心配なこと、または心配がないことが伝わっています。", "心配なことがあるかないかがまだ分かりません。", "心配なことを一つ言うか、「ありません」と答えましょう。"]
+    ],
+    [
+      ["日本に家族や親戚がいるか、いないかを答えられているか", "日本に家族や親戚がいるか、いないか答えられています。", "日本に家族や親戚がいるか、いないかがまだ分かりません。", "はい、兄がいます。いいえ、いません。などと答えましょう。"]
+    ],
+    [
+      ["アルバイトの予定について答えられているか", "アルバイトの予定について答えられています。", "アルバイトの予定がまだ分かりません。", "アルバイトをするか、しないかを答えましょう。"],
+      ["勉強を優先する意識まで伝えられているか", "勉強を大切にする気持ちが伝わっています。", "勉強を大切にする気持ちが不足しています。", "アルバイトをしても、勉強も頑張ります、と言いましょう。"]
+    ]
+  ],
+  vi: [
+    null,
+    [
+      ["Nêu lý do muốn du học Nhật Bản", "Bạn đã nêu lý do muốn du học Nhật Bản.", "Chưa rõ lý do bạn muốn du học Nhật Bản.", "Hãy nói ngắn gọn lý do bạn muốn học ở Nhật."],
+      ["Nêu điều muốn học ở Nhật hoặc mục tiêu tương lai", "Bạn đã nêu điều muốn học hoặc mục tiêu tương lai.", "Chưa rõ điều muốn học hoặc mục tiêu tương lai.", "Hãy nói một điều bạn muốn học ở Nhật hoặc mục tiêu tương lai."]
+    ],
+    [
+      ["Nêu lý do chọn trường này", "Bạn đã nêu lý do chọn trường này.", "Chưa rõ lý do bạn chọn trường này.", "Hãy nói ngắn gọn lý do bạn chọn trường này."],
+      ["Nêu thông tin đã tìm hiểu hoặc đặc điểm của trường", "Bạn đã nói về đặc điểm hoặc điều đã tìm hiểu về trường.", "Chưa có đặc điểm hoặc thông tin đã tìm hiểu về trường.", "Hãy nói một điểm tốt như giáo viên, giờ học hoặc hỗ trợ học tiếp."]
+    ],
+    [
+      ["Nêu điều khó trong học tiếng Nhật", "Bạn đã nói điều khó trong học tiếng Nhật.", "Chưa rõ điều gì khó.", "Hãy nói một điều khó như Kanji, ngữ pháp, hội thoại hoặc nghe."],
+      ["Nêu cách đang học cho điều khó đó", "Bạn đã nói cách đang học.", "Chưa rõ bạn đang học như thế nào.", "Hãy thêm một câu như học mỗi ngày hoặc nói chuyện với giáo viên."]
+    ],
+    [
+      ["Nêu thời gian đã học tiếng Nhật", "Bạn đã nói thời gian học tiếng Nhật.", "Chưa rõ bạn đã học trong bao lâu.", "Hãy nói thời gian như một năm hoặc sáu tháng."],
+      ["Nêu nơi học hoặc cách học", "Bạn đã nói nơi học hoặc cách học.", "Chưa rõ bạn học ở đâu hoặc học như thế nào.", "Hãy nói một ý như học ở trường, ở nhà, học hội thoại hoặc Kanji."]
+    ],
+    [
+      ["Nêu hướng đi sau khi tốt nghiệp trường tiếng Nhật", "Bạn đã nói hướng đi sau khi tốt nghiệp.", "Chưa rõ bạn muốn làm gì sau khi tốt nghiệp.", "Hãy nói muốn học trường chuyên môn, đại học hoặc đi làm."],
+      ["Nêu cụ thể muốn học gì sau đó", "Bạn đã nói cụ thể muốn học gì.", "Chưa rõ bạn muốn học gì cụ thể.", "Hãy nói một ngành như ô tô, điều dưỡng hoặc IT."]
+    ],
+    [
+      ["Nêu ai sẽ trả học phí, sinh hoạt phí hoặc cách chi trả", "Bạn đã nói ai sẽ trả chi phí hoặc cách chi trả.", "Chưa rõ ai sẽ trả chi phí.", "Hãy nói bố, mẹ, cha mẹ, tôi, hoặc tôi sẽ làm việc."]
+    ],
+    [
+      ["Nêu điều lo lắng, hoặc trả lời là không có", "Bạn đã nói điều lo lắng hoặc nói không có.", "Chưa rõ bạn có lo lắng hay không.", "Hãy nói một điều lo lắng hoặc nói không có."]
+    ],
+    [
+      ["Trả lời có hoặc không có gia đình, họ hàng ở Nhật", "Bạn đã trả lời có hoặc không có gia đình, họ hàng ở Nhật.", "Chưa rõ bạn có gia đình hoặc họ hàng ở Nhật hay không.", "Hãy trả lời như có anh trai ở Nhật, hoặc không có."]
+    ],
+    [
+      ["Trả lời kế hoạch làm thêm", "Bạn đã trả lời về kế hoạch làm thêm.", "Chưa rõ bạn có làm thêm hay không.", "Hãy nói bạn có làm thêm hay không."],
+      ["Thể hiện ý thức ưu tiên việc học", "Bạn đã nói sẽ coi trọng việc học.", "Chưa rõ ý thức coi trọng việc học.", "Hãy thêm rằng dù làm thêm, bạn vẫn sẽ cố gắng học."]
+    ]
+  ],
+  bn: [
+    null,
+    [
+      ["জাপানে পড়তে যাওয়ার কারণ বলা", "আপনি জাপানে পড়তে যাওয়ার কারণ বলেছেন।", "জাপানে পড়তে যাওয়ার কারণ এখনও পরিষ্কার নয়।", "জাপানে কেন পড়তে চান, ছোট করে বলুন।"],
+      ["জাপানে কী পড়তে চান বা ভবিষ্যৎ লক্ষ্য বলা", "আপনি কী পড়তে চান বা ভবিষ্যৎ লক্ষ্য বলেছেন।", "কী পড়তে চান বা ভবিষ্যৎ লক্ষ্য পরিষ্কার নয়।", "জাপানে কী পড়তে চান বা ভবিষ্যতে কী করতে চান, একটি বলুন।"]
+    ],
+    [
+      ["এই স্কুল বেছে নেওয়ার কারণ বলা", "আপনি এই স্কুল বেছে নেওয়ার কারণ বলেছেন।", "এই স্কুল বেছে নেওয়ার কারণ পরিষ্কার নয়।", "এই স্কুল কেন বেছে নিয়েছেন, ছোট করে বলুন।"],
+      ["স্কুল সম্পর্কে জানা তথ্য বা বৈশিষ্ট্য বলা", "আপনি স্কুলের বৈশিষ্ট্য বা জানা তথ্য বলেছেন।", "স্কুলের বৈশিষ্ট্য বা জানা তথ্য নেই।", "শিক্ষক, ক্লাস বা উচ্চশিক্ষা সহায়তার মতো ভালো একটি দিক বলুন।"]
+    ],
+    [
+      ["জাপানি পড়ায় কী কঠিন তা বলা", "আপনি কী কঠিন তা বলেছেন।", "কী কঠিন তা পরিষ্কার নয়।", "কানজি, ব্যাকরণ, কথোপকথন বা শোনা—একটি কঠিন বিষয় বলুন।"],
+      ["কঠিন বিষয়ের জন্য কীভাবে পড়ছেন তা বলা", "আপনি কীভাবে পড়ছেন তা বলেছেন।", "কীভাবে পড়ছেন তা পরিষ্কার নয়।", "প্রতিদিন পড়ি বা শিক্ষকের সঙ্গে কথা বলি—এমন একটি কথা বলুন।"]
+    ],
+    [
+      ["কতদিন জাপানি পড়েছেন তা বলা", "আপনি কতদিন জাপানি পড়েছেন তা বলেছেন।", "কতদিন পড়েছেন তা পরিষ্কার নয়।", "এক বছর, ছয় মাস—এভাবে সময় বলুন।"],
+      ["কোথায় বা কীভাবে পড়েছেন তা বলা", "আপনি কোথায় বা কীভাবে পড়েছেন তা বলেছেন।", "কোথায় বা কীভাবে পড়েছেন তা পরিষ্কার নয়।", "স্কুলে, বাড়িতে, কথোপকথন বা কানজি পড়েছি—এমন একটি কথা বলুন।"]
+    ],
+    [
+      ["জাপানি স্কুলের পরে পথ বলা", "আপনি স্নাতকের পরে কী করতে চান বলেছেন।", "স্নাতকের পরে কী করতে চান পরিষ্কার নয়।", "ভোকেশনাল স্কুল, বিশ্ববিদ্যালয় বা চাকরি—যা করতে চান বলুন।"],
+      ["পরে কী পড়তে চান তা নির্দিষ্ট করে বলা", "আপনি কী পড়তে চান নির্দিষ্ট করে বলেছেন।", "কী পড়তে চান তা নির্দিষ্ট নয়।", "গাড়ি, কেয়ারগিভিং বা IT-এর মতো একটি বিষয় বলুন।"]
+    ],
+    [
+      ["খরচ কে দেবে বা কীভাবে দেবেন তা বলা", "আপনি খরচ কে দেবে বা কীভাবে দেবেন বলেছেন।", "খরচ কে দেবে তা পরিষ্কার নয়।", "বাবা, মা, বাবা-মা, আমি, বা কাজ করব—এভাবে বলুন।"]
+    ],
+    [
+      ["চিন্তার বিষয় বলা, অথবা নেই বলা", "আপনি চিন্তার বিষয় বলেছেন অথবা নেই বলেছেন।", "চিন্তা আছে কি নেই পরিষ্কার নয়।", "একটি চিন্তার বিষয় বলুন, অথবা বলুন নেই।"]
+    ],
+    [
+      ["জাপানে পরিবার বা আত্মীয় আছে কি নেই বলা", "আপনি পরিবার বা আত্মীয় আছে কি নেই বলেছেন।", "জাপানে পরিবার বা আত্মীয় আছে কি নেই পরিষ্কার নয়।", "হ্যাঁ, ভাই আছে। না, নেই। এভাবে বলুন।"]
+    ],
+    [
+      ["আলবাইটের পরিকল্পনা বলা", "আপনি আলবাইটের পরিকল্পনা বলেছেন।", "আলবাইট করবেন কি না পরিষ্কার নয়।", "আলবাইট করবেন কি না বলুন।"],
+      ["পড়াশোনাকে অগ্রাধিকার দেওয়ার মনোভাব বলা", "আপনি পড়াশোনাকে গুরুত্ব দেবেন বলেছেন।", "পড়াশোনাকে গুরুত্ব দেওয়ার কথা পরিষ্কার নয়।", "আলবাইট করলেও পড়াশোনা করব—এ কথা যোগ করুন।"]
+    ]
+  ],
+  id: [
+    null,
+    [
+      ["Menyebutkan alasan ingin belajar di Jepang", "Alasan ingin belajar di Jepang sudah tersampaikan.", "Alasan ingin belajar di Jepang belum jelas.", "Katakan singkat alasan ingin belajar di Jepang."],
+      ["Menyebutkan hal yang ingin dipelajari di Jepang atau tujuan masa depan", "Hal yang ingin dipelajari atau tujuan masa depan sudah tersampaikan.", "Hal yang ingin dipelajari atau tujuan masa depan belum jelas.", "Katakan satu hal yang ingin dipelajari di Jepang atau tujuan masa depan."]
+    ],
+    [
+      ["Menyebutkan alasan memilih sekolah ini", "Alasan memilih sekolah ini sudah tersampaikan.", "Alasan memilih sekolah ini belum jelas.", "Katakan singkat alasan memilih sekolah ini."],
+      ["Menyebutkan informasi yang dicari atau ciri sekolah", "Ciri sekolah atau hal yang sudah dicari sudah disebutkan.", "Ciri sekolah atau hal yang sudah dicari belum ada.", "Katakan satu hal baik, misalnya guru, kelas, atau dukungan lanjut studi."]
+    ],
+    [
+      ["Menyebutkan hal yang sulit dalam belajar bahasa Jepang", "Hal yang sulit sudah disebutkan.", "Belum jelas apa yang sulit.", "Katakan satu hal yang sulit, seperti kanji, tata bahasa, percakapan, atau mendengar."],
+      ["Menyebutkan cara belajar untuk hal yang sulit", "Cara belajar sudah tersampaikan.", "Cara belajar belum jelas.", "Tambahkan satu kalimat, misalnya belajar setiap hari atau berbicara dengan guru."]
+    ],
+    [
+      ["Menyebutkan lama belajar bahasa Jepang", "Lama belajar bahasa Jepang sudah tersampaikan.", "Belum jelas berapa lama Anda belajar.", "Katakan lamanya, misalnya satu tahun atau enam bulan."],
+      ["Menyebutkan tempat atau cara belajar", "Tempat atau cara belajar sudah tersampaikan.", "Tempat atau cara belajar belum jelas.", "Katakan satu hal, misalnya belajar di sekolah, di rumah, percakapan, atau kanji."]
+    ],
+    [
+      ["Menyebutkan rencana setelah lulus sekolah bahasa Jepang", "Rencana setelah lulus sudah tersampaikan.", "Belum jelas apa yang ingin dilakukan setelah lulus.", "Katakan ingin ke sekolah kejuruan, universitas, atau bekerja."],
+      ["Menyebutkan secara konkret apa yang ingin dipelajari", "Hal yang ingin dipelajari sudah konkret.", "Belum jelas apa yang ingin dipelajari.", "Katakan satu bidang, misalnya otomotif, perawatan, atau IT."]
+    ],
+    [
+      ["Menyebutkan siapa yang membayar biaya atau bagaimana membayarnya", "Siapa yang membayar biaya atau caranya sudah tersampaikan.", "Belum jelas siapa yang membayar biaya.", "Katakan ayah, ibu, orang tua, saya, atau saya akan bekerja."]
+    ],
+    [
+      ["Menyebutkan kekhawatiran, atau menjawab tidak ada", "Kekhawatiran atau jawaban tidak ada sudah tersampaikan.", "Belum jelas apakah ada kekhawatiran.", "Katakan satu kekhawatiran, atau katakan tidak ada."]
+    ],
+    [
+      ["Menjawab ada atau tidak ada keluarga/kerabat di Jepang", "Anda sudah menjawab ada atau tidak ada keluarga/kerabat di Jepang.", "Belum jelas apakah ada keluarga atau kerabat di Jepang.", "Jawab misalnya ada kakak laki-laki, atau tidak ada."]
+    ],
+    [
+      ["Menjawab rencana kerja paruh waktu", "Rencana kerja paruh waktu sudah dijawab.", "Belum jelas apakah akan kerja paruh waktu.", "Katakan akan kerja paruh waktu atau tidak."],
+      ["Menunjukkan kesadaran mengutamakan belajar", "Sikap mengutamakan belajar sudah tersampaikan.", "Sikap mengutamakan belajar belum jelas.", "Tambahkan bahwa meskipun bekerja paruh waktu, Anda tetap akan belajar."]
+    ]
+  ],
+  th: [
+    null,
+    [
+      ["บอกเหตุผลที่อยากไปเรียนที่ญี่ปุ่น", "บอกเหตุผลที่อยากไปเรียนที่ญี่ปุ่นได้แล้ว", "ยังไม่ชัดเจนว่าอยากไปเรียนที่ญี่ปุ่นเพราะอะไร", "พูดสั้น ๆ ว่าทำไมอยากเรียนที่ญี่ปุ่น"],
+      ["บอกสิ่งที่อยากเรียนที่ญี่ปุ่นหรือเป้าหมายในอนาคต", "บอกสิ่งที่อยากเรียนหรือเป้าหมายในอนาคตได้แล้ว", "ยังไม่ชัดเจนว่าอยากเรียนอะไรหรือมีเป้าหมายอะไร", "บอกหนึ่งอย่างที่อยากเรียนที่ญี่ปุ่นหรือเป้าหมายในอนาคต"]
+    ],
+    [
+      ["บอกเหตุผลที่เลือกโรงเรียนนี้", "บอกเหตุผลที่เลือกโรงเรียนนี้ได้แล้ว", "ยังไม่ชัดเจนว่าเลือกโรงเรียนนี้เพราะอะไร", "พูดสั้น ๆ ว่าทำไมเลือกโรงเรียนนี้"],
+      ["บอกข้อมูลที่ค้นมาหรือจุดเด่นของโรงเรียน", "พูดถึงจุดเด่นหรือข้อมูลที่ค้นมาของโรงเรียนได้แล้ว", "ยังไม่มีจุดเด่นหรือข้อมูลที่ค้นมาของโรงเรียน", "บอกข้อดีหนึ่งอย่าง เช่น ครู ชั้นเรียน หรือการช่วยเรื่องเรียนต่อ"]
+    ],
+    [
+      ["บอกว่าสิ่งใดยากในการเรียนภาษาญี่ปุ่น", "บอกสิ่งที่ยากได้แล้ว", "ยังไม่ชัดเจนว่าสิ่งใดยาก", "บอกหนึ่งอย่างที่ยาก เช่น คันจิ ไวยากรณ์ การสนทนา หรือการฟัง"],
+      ["บอกวิธีเรียนสำหรับสิ่งที่ยาก", "บอกวิธีเรียนได้แล้ว", "ยังไม่ชัดเจนว่าเรียนอย่างไร", "เพิ่มหนึ่งประโยค เช่น เรียนทุกวัน หรือคุยกับครู"]
+    ],
+    [
+      ["บอกระยะเวลาที่เรียนภาษาญี่ปุ่น", "บอกระยะเวลาที่เรียนภาษาญี่ปุ่นได้แล้ว", "ยังไม่ชัดเจนว่าเรียนมานานเท่าไร", "บอกระยะเวลา เช่น หนึ่งปี หรือหกเดือน"],
+      ["บอกว่าเรียนที่ไหนหรือเรียนอย่างไร", "บอกที่เรียนหรือวิธีเรียนได้แล้ว", "ยังไม่ชัดเจนว่าเรียนที่ไหนหรือเรียนอย่างไร", "บอกหนึ่งอย่าง เช่น เรียนที่โรงเรียน ที่บ้าน เรียนสนทนา หรือคันจิ"]
+    ],
+    [
+      ["บอกเส้นทางหลังจบโรงเรียนภาษาญี่ปุ่น", "บอกแผนหลังเรียนจบได้แล้ว", "ยังไม่ชัดเจนว่าหลังเรียนจบอยากทำอะไร", "บอกว่าอยากเข้าโรงเรียนอาชีวะ มหาวิทยาลัย หรือทำงาน"],
+      ["บอกอย่างชัดเจนว่าอยากเรียนอะไรต่อ", "บอกสิ่งที่อยากเรียนต่ออย่างชัดเจนได้แล้ว", "ยังไม่ชัดเจนว่าอยากเรียนอะไร", "บอกหนึ่งสาขา เช่น รถยนต์ การดูแลผู้สูงอายุ หรือ IT"]
+    ],
+    [
+      ["บอกว่าใครจ่ายค่าเรียน/ค่าครองชีพ หรือจะจ่ายอย่างไร", "บอกได้แล้วว่าใครจ่ายค่าใช้จ่ายหรือจะจ่ายอย่างไร", "ยังไม่ชัดเจนว่าใครจ่ายค่าใช้จ่าย", "บอกว่า พ่อ แม่ พ่อแม่ ฉัน หรือจะทำงาน"]
+    ],
+    [
+      ["บอกเรื่องที่กังวล หรือบอกว่าไม่มี", "บอกเรื่องที่กังวลหรือบอกว่าไม่มีได้แล้ว", "ยังไม่ชัดเจนว่ามีเรื่องกังวลหรือไม่", "บอกเรื่องที่กังวลหนึ่งอย่าง หรือบอกว่าไม่มี"]
+    ],
+    [
+      ["ตอบว่ามีหรือไม่มีครอบครัว/ญาติอยู่ญี่ปุ่น", "ตอบได้แล้วว่ามีหรือไม่มีครอบครัว/ญาติอยู่ญี่ปุ่น", "ยังไม่ชัดเจนว่ามีครอบครัวหรือญาติอยู่ญี่ปุ่นหรือไม่", "ตอบเช่น มีพี่ชายอยู่ หรือ ไม่มี"]
+    ],
+    [
+      ["ตอบแผนเรื่องงานพิเศษ", "ตอบเรื่องแผนงานพิเศษได้แล้ว", "ยังไม่ชัดเจนว่าจะทำงานพิเศษหรือไม่", "บอกว่าจะทำงานพิเศษหรือไม่"],
+      ["แสดงความตั้งใจให้ความสำคัญกับการเรียน", "แสดงแล้วว่าจะให้ความสำคัญกับการเรียน", "ยังไม่ชัดเจนว่าจะให้ความสำคัญกับการเรียน", "เพิ่มว่าแม้ทำงานพิเศษ ก็จะพยายามเรียนด้วย"]
+    ]
+  ]
+};
+
+const SCHOOL_QUESTION_GUIDANCE = {};
+for (const language of Object.keys(SCHOOL_TRANSLATED_SCORE_ITEMS)) {
+  SCHOOL_QUESTION_GUIDANCE[language] = SCHOOL_TRANSLATED_SCORE_ITEMS[language].map((items) => (
+    items && items.map((item) => item.slice(1))
+  ));
+}
+
 const SCORE_DISPLAY_TEXT = {
   ja: { total: "合計点", feedback: "フィードバックコメント", advice: "改善アドバイス", matched: "一致", unmatched: "不一致", points: "点", fields: { name: "名前", age: "年齢", nationality: "国籍(出身国)", schoolName: "学校名" } },
   vi: { total: "Tổng điểm", feedback: "Nhận xét", advice: "Gợi ý cải thiện", matched: "Khớp", unmatched: "Không khớp", points: "điểm", fields: { name: "Tên", age: "Tuổi", nationality: "Quốc tịch (nước xuất thân)", schoolName: "Tên trường" } },
-  bn: { total: "মোট নম্বর", feedback: "মূল্যায়নের মন্তব্য", advice: "উন্নতির পরামর্শ", matched: "মিলেছে", unmatched: "মেলেনি", points: "নম্বর", fields: { name: "নাম", age: "বয়স", nationality: "জাতীয়তা (নিজ দেশ)", schoolName: "স্কুলের নাম" } }
+  bn: { total: "মোট নম্বর", feedback: "মূল্যায়নের মন্তব্য", advice: "উন্নতির পরামর্শ", matched: "মিলেছে", unmatched: "মেলেনি", points: "নম্বর", fields: { name: "নাম", age: "বয়স", nationality: "জাতীয়তা (নিজ দেশ)", schoolName: "স্কুলের নাম" } },
+  id: { total: "Nilai total", feedback: "Komentar umpan balik", advice: "Saran perbaikan", matched: "Cocok", unmatched: "Belum cocok", points: "poin", fields: { name: "Nama", age: "Usia", nationality: "Kewarganegaraan (negara asal)", schoolName: "Nama sekolah" } },
+  th: { total: "คะแนนรวม", feedback: "ความคิดเห็น", advice: "คำแนะนำในการปรับปรุง", matched: "ตรง", unmatched: "ยังไม่ตรง", points: "คะแนน", fields: { name: "ชื่อ", age: "อายุ", nationality: "สัญชาติ (ประเทศบ้านเกิด)", schoolName: "ชื่อโรงเรียน" } }
 };
 
 const GUIDANCE_LABELS = {
   ja: { achieved: "できた", missing: "不足", complete: "素晴らしいです。この調子で自信を持って面接に臨みましょう！" },
   vi: { achieved: "Đã làm được", missing: "Còn thiếu", complete: "Tuyệt vời! Cứ giữ phong độ này và tự tin bước vào buổi phỏng vấn nhé!" },
-  bn: { achieved: "যা হয়েছে", missing: "যা কম আছে", complete: "দারুণ হয়েছে! এই ধারাবাহিকতা ও আত্মবিশ্বাস আপনাকে সাক্ষাৎকারে আরও ভালো করতে সাহায্য করবে।" }
+  bn: { achieved: "যা হয়েছে", missing: "যা কম আছে", complete: "দারুণ হয়েছে! এই ধারাবাহিকতা ও আত্মবিশ্বাস আপনাকে সাক্ষাৎকারে আরও ভালো করতে সাহায্য করবে।" },
+  id: { achieved: "Sudah baik", missing: "Perlu ditambah", complete: "Bagus sekali. Terus percaya diri saat wawancara!" },
+  th: { achieved: "ทำได้แล้ว", missing: "ยังขาด", complete: "ดีมาก ขอให้มั่นใจแบบนี้ในการสัมภาษณ์!" }
 };
 
 function getIntroductionGuidance(language) {
@@ -989,6 +1321,18 @@ function getIntroductionGuidance(language) {
       [`আপনি বয়স “${values[1]}” বলেছেন।`, `বয়স “${values[1]}” বলা হয়নি।`, `উত্তরে বয়স “${values[1]}” যোগ করুন।`],
       [`আপনি জাতীয়তা “${values[2]}” বলেছেন।`, `জাতীয়তা “${values[2]}” বলা হয়নি।`, `উত্তরে জাতীয়তা “${values[2]}” যোগ করুন।`],
       [`আপনি জাপানি ভাষা স্কুলের নাম “${values[3]}” বলেছেন।`, `স্কুলের নাম “${values[3]}” বলা হয়নি।`, `উত্তরে স্কুলের নাম “${values[3]}” যোগ করুন।`]
+    ],
+    id: [
+      [`Anda sudah menyebutkan nama “${values[0]}”.`, `Nama “${values[0]}” belum disebutkan.`, `Tambahkan nama “${values[0]}” dalam jawaban.`],
+      [`Anda sudah menyebutkan usia “${values[1]}”.`, `Usia “${values[1]}” belum disebutkan.`, `Tambahkan usia “${values[1]}” dalam jawaban.`],
+      [`Anda sudah menyebutkan kewarganegaraan “${values[2]}”.`, `Kewarganegaraan “${values[2]}” belum disebutkan.`, `Tambahkan kewarganegaraan “${values[2]}” dalam jawaban.`],
+      [`Anda sudah menyebutkan nama sekolah “${values[3]}”.`, `Nama sekolah “${values[3]}” belum disebutkan.`, `Tambahkan nama sekolah “${values[3]}” dalam jawaban.`]
+    ],
+    th: [
+      [`บอกชื่อ “${values[0]}” ได้แล้ว`, `ยังไม่ได้บอกชื่อ “${values[0]}”`, `เพิ่มชื่อ “${values[0]}” ในคำตอบ`],
+      [`บอกอายุ “${values[1]}” ได้แล้ว`, `ยังไม่ได้บอกอายุ “${values[1]}”`, `เพิ่มอายุ “${values[1]}” ในคำตอบ`],
+      [`บอกสัญชาติ “${values[2]}” ได้แล้ว`, `ยังไม่ได้บอกสัญชาติ “${values[2]}”`, `เพิ่มสัญชาติ “${values[2]}” ในคำตอบ`],
+      [`บอกชื่อโรงเรียน “${values[3]}” ได้แล้ว`, `ยังไม่ได้บอกชื่อโรงเรียน “${values[3]}”`, `เพิ่มชื่อโรงเรียน “${values[3]}” ในคำตอบ`]
     ]
   };
   const guidance = messages[language] || messages.ja;
@@ -1024,11 +1368,20 @@ function makeFriendlyAdvice(message, language) {
     .replace(
       /^প্রথমে বলুন জাপানি ভাষায় কাজ করা নিয়ে আপনার উদ্বেগ আছে কি না।$/,
       "জাপানি ভাষায় কাজ করা নিয়ে উদ্বেগ আছে কি না প্রথমে জানালে উত্তরটি আরও পরিষ্কার হবে।"
-    );
+  );
+}
+
+function getGuidanceSource() {
+  return interviewType === "school" ? SCHOOL_QUESTION_GUIDANCE : UPDATED_QUESTION_GUIDANCE;
+}
+
+function getTranslatedScoreItem(language, questionIndex, criterionIndex) {
+  const source = interviewType === "school" ? SCHOOL_TRANSLATED_SCORE_ITEMS : TRANSLATED_SCORE_ITEMS;
+  return source[language]?.[questionIndex]?.[criterionIndex] || null;
 }
 
 function renderScoreGuidance(scores, maximum) {
-  const guidanceSource = UPDATED_QUESTION_GUIDANCE;
+  const guidanceSource = getGuidanceSource();
   const language = guidanceSource[feedbackLanguage] ? feedbackLanguage : "ja";
   const labels = GUIDANCE_LABELS[language];
   const guidance = currentIndex === 0
@@ -1079,7 +1432,7 @@ function renderScores(scores) {
     const value = document.createElement("dd");
     label.textContent = language === "ja" ? criterion : isIntroduction
       ? display.fields[introductionItems[index].key]
-      : TRANSLATED_SCORE_ITEMS[language][currentIndex][index][0];
+      : getTranslatedScoreItem(language, currentIndex, index)?.[0] || criterion;
     value.innerHTML = `<strong>${formatPoints(scores[index])}</strong><span>/${formatPoints(maximum)}</span>`;
 
     if (isIntroduction) {
