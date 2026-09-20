@@ -1089,7 +1089,53 @@ const TRANSLATED_SCORE_ITEMS = {
     ]
   ]
 };
-for (const language of ["vi", "bn"]) {
+
+function buildEmploymentTranslation(labels, messages) {
+  return labels.map((items) => items && items.map((label) => [
+    label,
+    messages.achieved(label),
+    messages.missing(label),
+    messages.advice(label)
+  ]));
+}
+
+TRANSLATED_SCORE_ITEMS.id = buildEmploymentTranslation([
+  null,
+  ["Menyebutkan alasan melamar", "Menjelaskan alasan", "Menunjukkan sikap positif"],
+  ["Menyebutkan alasan memilih perusahaan", "Menjelaskan alasan memilih perusahaan", "Menunjukkan keinginan bergabung dengan perusahaan"],
+  ["Menyebutkan hal yang paling diperjuangkan", "Menjelaskan isi pengalaman", "Menyebutkan pelajaran atau perkembangan diri"],
+  ["Menyebutkan kelebihan diri", "Memberikan alasan atau contoh konkret", "Menjelaskan cara memanfaatkan kelebihan dalam pekerjaan"],
+  ["Segera melapor kepada atasan", "Memikirkan penyebab kesalahan", "Mengikuti arahan atasan dan menanganinya"],
+  ["Menyebutkan kelemahan dengan jujur", "Menjelaskan usaha untuk memperbaikinya", "Mengakhiri dengan sikap positif"],
+  ["Menyebutkan hal penting dalam kerja tim", "Memberikan alasan atau contoh konkret", "Menjelaskan cara menerapkannya dalam pekerjaan"],
+  ["Menjawab ada atau tidak ada kekhawatiran"],
+  ["Menyebutkan hal yang dikhawatirkan", "Menjelaskan usaha yang sedang dilakukan"],
+  ["Menyebutkan tujuan masa depan", "Menjelaskan usaha untuk mencapai tujuan", "Menunjukkan sikap positif"]
+], {
+  achieved: (label) => `Sudah baik: ${label}.`,
+  missing: (label) => `Masih perlu ditambahkan: ${label}.`,
+  advice: (label) => `Tambahkan jawaban singkat tentang: ${label}.`
+});
+
+TRANSLATED_SCORE_ITEMS.th = buildEmploymentTranslation([
+  null,
+  ["บอกเหตุผลที่สมัคร", "อธิบายเหตุผล", "แสดงทัศนคติเชิงบวก"],
+  ["บอกเหตุผลที่เลือกบริษัท", "อธิบายเหตุผลที่เลือก", "แสดงความตั้งใจที่จะเข้าทำงานในบริษัท"],
+  ["บอกสิ่งที่พยายามมากที่สุด", "อธิบายรายละเอียด", "บอกสิ่งที่ได้เรียนรู้หรือพัฒนาขึ้น"],
+  ["บอกจุดแข็งของตนเอง", "บอกเหตุผลหรือตัวอย่างที่ชัดเจน", "อธิบายว่าจะใช้จุดแข็งในการทำงานอย่างไร"],
+  ["รายงานหัวหน้าทันที", "คิดหาสาเหตุของความผิดพลาด", "ฟังคำสั่งของหัวหน้าและดำเนินการแก้ไข"],
+  ["บอกจุดอ่อนอย่างตรงไปตรงมา", "อธิบายว่ากำลังพยายามปรับปรุงอย่างไร", "จบคำตอบด้วยทัศนคติเชิงบวก"],
+  ["บอกสิ่งสำคัญในการทำงานเป็นทีม", "บอกเหตุผลหรือตัวอย่างที่ชัดเจน", "อธิบายว่าจะนำไปใช้ในการทำงานอย่างไร"],
+  ["ตอบว่ามีหรือไม่มีความกังวล"],
+  ["บอกสิ่งที่กังวล", "อธิบายสิ่งที่กำลังทำเพื่อแก้ไข"],
+  ["บอกเป้าหมายในอนาคต", "อธิบายสิ่งที่กำลังทำเพื่อเป้าหมาย", "แสดงทัศนคติเชิงบวก"]
+], {
+  achieved: (label) => `ทำได้ดี: ${label}`,
+  missing: (label) => `ยังขาด: ${label}`,
+  advice: (label) => `ควรเพิ่มคำตอบสั้น ๆ เกี่ยวกับ: ${label}`
+});
+
+for (const language of ["vi", "bn", "id", "th"]) {
   UPDATED_QUESTION_GUIDANCE[language] = TRANSLATED_SCORE_ITEMS[language].map((items) => (
     items && items.map((item) => item.slice(1))
   ));
