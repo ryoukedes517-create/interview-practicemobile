@@ -30,11 +30,19 @@ body {
   overscroll-behavior-y: none;
 }
 
+.voice-credit {
+  padding: 0 16px max(10px, env(safe-area-inset-bottom));
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
 button, input, select, textarea { font: inherit; }
 
 .app {
-  min-height: 100vh;
-  min-height: 100dvh;
+  min-height: calc(100vh - 32px);
+  min-height: calc(100dvh - 32px);
   display: grid;
   place-items: center;
   padding:

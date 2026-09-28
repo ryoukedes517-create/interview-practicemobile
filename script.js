@@ -323,6 +323,7 @@ let recognitionAlternatives = [];
 let shouldKeepListening = false;
 let recognitionRestartTimer = null;
 let questionSpeechTimer = null;
+let questionAudio = null;
 let microphonePermissionGranted = false;
 let speechSynthesisUnlocked = false;
 let recognitionHadFatalError = false;
@@ -335,6 +336,19 @@ let detectedLongPauses = [];
 // 開発時は URL の末尾に ?debugProfileMatch を付けると照合内容を表示できます。
 const DEBUG_PROFILE_MATCHING = new URLSearchParams(window.location.search).has("debugProfileMatch");
 const QUESTION_SPEECH_DELAY = 2000;
+const JOB_QUESTION_AUDIO = [
+  "audio/job/q01.wav",
+  "audio/job/q02.wav",
+  "audio/job/q03.wav",
+  "audio/job/q04.wav",
+  "audio/job/q05.wav",
+  "audio/job/q06.wav",
+  "audio/job/q07.wav",
+  "audio/job/q08.wav",
+  "audio/job/q09a.wav",
+  "audio/job/q09b.wav",
+  "audio/job/q10.wav"
+];
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
   || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const IS_MOBILE = IS_IOS || /Android|Mobile/i.test(navigator.userAgent);
@@ -796,7 +810,7 @@ function startInterview() {
 
 function editProfile() {
   clearTimeout(questionSpeechTimer);
-  window.speechSynthesis?.cancel();
+  stopQuestionPlayback();
   endRecognitionSession();
   getProfileFields().forEach((field) => {
     profileFormEl.elements[field.key].value = profile[field.key] || "";
@@ -813,12 +827,16 @@ function renderQuestion() {
   lastSpeechActivityAt = null;
   detectedLongPauses = [];
   clearTimeout(questionSpeechTimer);
-  window.speechSynthesis?.cancel();
+  stopQuestionPlayback();
   categoryEl.textContent = current.category;
   questionTextEl.textContent = current.question;
-  questionNumberEl.textContent = String(currentIndex + 1);
-  questionTotalEl.textContent = String(questions.length);
-  progressBarEl.style.width = `${((currentIndex + 1) / questions.length) * 100}%`;
+  const displayedQuestionNumber = interviewType === "employment" && currentIndex >= 9
+    ? currentIndex
+    : currentIndex + 1;
+  const displayedQuestionTotal = interviewType === "employment" ? 10 : questions.length;
+  questionNumberEl.textContent = String(displayedQuestionNumber);
+  questionTotalEl.textContent = String(displayedQuestionTotal);
+  progressBarEl.style.width = `${(displayedQuestionNumber / displayedQuestionTotal) * 100}%`;
   answerInputEl.value = "";
   scoreCardEl.classList.add("hidden");
   debugPanelEl.classList.add("hidden");
@@ -833,6 +851,11 @@ function renderQuestion() {
         : "「話す」を押すとマイクが始まります。",
       "ready"
     );
+  }
+
+  if (interviewType === "employment") {
+    speakQuestion();
+    return;
   }
 
   const questionIndex = currentIndex;
@@ -1456,7 +1479,7 @@ function renderScoreGuidance(scores, maximum) {
 function renderScores(scores) {
   endRecognitionSession();
   clearTimeout(questionSpeechTimer);
-  window.speechSynthesis?.cancel();
+  stopQuestionPlayback();
   const current = questions[currentIndex];
   const isIntroduction = current.type === "introduction";
   const introductionItems = isIntroduction ? getIntroductionItems() : [];
@@ -1508,7 +1531,57 @@ function renderScores(scores) {
   }
 }
 
+function stopQuestionAudio() {
+  if (!questionAudio) return;
+  questionAudio.pause();
+  try {
+    questionAudio.currentTime = 0;
+  } catch {
+    // 読み込み前の音声でも、画面遷移や回答操作はそのまま続けます。
+  }
+  questionAudio = null;
+}
+
+function stopQuestionPlayback() {
+  stopQuestionAudio();
+  window.speechSynthesis?.cancel();
+}
+
+function playJobQuestionAudio() {
+  const audioPath = JOB_QUESTION_AUDIO[currentIndex];
+  if (!audioPath) {
+    setVoiceStatus("質問音声が設定されていません。回答はそのまま続けられます。", "error");
+    return;
+  }
+
+  endRecognitionSession();
+  stopQuestionPlayback();
+  const audio = new Audio(audioPath);
+  questionAudio = audio;
+  audio.preload = "auto";
+  audio.addEventListener("play", () => {
+    setVoiceStatus("質問を再生しています。", "ready");
+  });
+  audio.addEventListener("ended", () => {
+    if (questionAudio === audio) questionAudio = null;
+    setVoiceStatus("「話す」を押して回答してください。", "ready");
+  });
+  audio.addEventListener("error", () => {
+    if (questionAudio === audio) questionAudio = null;
+    setVoiceStatus("質問音声を読み込めませんでした。回答はそのまま続けられます。", "error");
+  });
+  audio.play().catch(() => {
+    if (questionAudio === audio) questionAudio = null;
+    setVoiceStatus("質問音声を再生できませんでした。「質問を聞く」を押してください。", "error");
+  });
+}
+
 function speakQuestion() {
+  if (interviewType === "employment") {
+    playJobQuestionAudio();
+    return;
+  }
+
   if (!("speechSynthesis" in window)) {
     setVoiceStatus("このブラウザは音声読み上げに対応していません。", "error");
     return;
@@ -1538,6 +1611,7 @@ function speakQuestion() {
 }
 
 function unlockSpeechSynthesis() {
+  if (interviewType === "employment") return;
   if (speechSynthesisUnlocked || !("speechSynthesis" in window)) return;
   const synth = window.speechSynthesis;
   synth.cancel();
@@ -1769,7 +1843,7 @@ function startRecognitionSession() {
   if (!recognition || shouldKeepListening || isListening) return;
 
   clearTimeout(questionSpeechTimer);
-  window.speechSynthesis?.cancel();
+  stopQuestionPlayback();
   isAcceptingSpeech = true;
   shouldKeepListening = true;
   recognitionAlternatives = [];
@@ -1797,7 +1871,7 @@ function startRecognitionSession() {
 
 function openIOSNativeDictation() {
   clearTimeout(questionSpeechTimer);
-  window.speechSynthesis?.cancel();
+  stopQuestionPlayback();
   endRecognitionSession();
 
   if (answerInputEl.disabled) return;
@@ -1935,8 +2009,25 @@ retryQuestionBtn.addEventListener("click", () => {
   unlockSpeechSynthesis();
 });
 
+function jobAnswerNeedsAnxietyFollowUp(rawAnswer) {
+  const answer = normalize(rawAnswer);
+  const clearlyNoAnxiety = hasAny(answer, ["いいえ", "ありません", "ないです", "不安はない", "心配はない"]);
+  const hasAnxiety = hasAny(answer, ["はい", "あります", "不安があります", "心配があります", "不安です", "心配です"]);
+  return hasAnxiety && !clearlyNoAnxiety;
+}
+
 nextQuestionBtn.addEventListener("click", () => {
-  currentIndex = currentIndex === questions.length - 1 ? 0 : currentIndex + 1;
+  if (currentIndex === questions.length - 1) {
+    currentIndex = 0;
+  } else if (
+    interviewType === "employment"
+    && currentIndex === 8
+    && !jobAnswerNeedsAnxietyFollowUp(answerInputEl.value)
+  ) {
+    currentIndex = 10;
+  } else {
+    currentIndex += 1;
+  }
   renderQuestion();
   unlockSpeechSynthesis();
 });
@@ -1978,7 +2069,7 @@ window.addEventListener("pagehide", endRecognitionSession);
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     clearTimeout(questionSpeechTimer);
-    window.speechSynthesis?.cancel();
+    stopQuestionPlayback();
     endRecognitionSession();
   }
 });
