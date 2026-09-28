@@ -324,6 +324,8 @@ let shouldKeepListening = false;
 let recognitionRestartTimer = null;
 let questionSpeechTimer = null;
 let questionAudio = null;
+let schoolFollowUpActive = false;
+let schoolMainAnswer = "";
 let microphonePermissionGranted = false;
 let speechSynthesisUnlocked = false;
 let recognitionHadFatalError = false;
@@ -348,6 +350,18 @@ const JOB_QUESTION_AUDIO = [
   "audio/job/q09a.wav",
   "audio/job/q09b.wav",
   "audio/job/q10.wav"
+];
+const SCHOOL_QUESTION_AUDIO = [
+  "audio/school/q01.wav",
+  "audio/school/q02.wav",
+  "audio/school/q03.wav",
+  "audio/school/q04.wav",
+  "audio/school/q05.wav",
+  "audio/school/q06a.wav",
+  "audio/school/q07.wav",
+  "audio/school/q08.wav",
+  "audio/school/q09.wav",
+  "audio/school/q10.wav"
 ];
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
   || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -801,6 +815,8 @@ function renderProfileSummary() {
 
 function startInterview() {
   currentIndex = 0;
+  schoolFollowUpActive = false;
+  schoolMainAnswer = "";
   profileScreenEl.classList.add("hidden");
   interviewScreenEl.classList.remove("hidden");
   renderProfileSummary();
@@ -811,6 +827,8 @@ function startInterview() {
 function editProfile() {
   clearTimeout(questionSpeechTimer);
   stopQuestionPlayback();
+  schoolFollowUpActive = false;
+  schoolMainAnswer = "";
   endRecognitionSession();
   getProfileFields().forEach((field) => {
     profileFormEl.elements[field.key].value = profile[field.key] || "";
@@ -822,6 +840,7 @@ function editProfile() {
 
 function renderQuestion() {
   const current = questions[currentIndex];
+  const isSchoolFollowUp = interviewType === "school" && currentIndex === 5 && schoolFollowUpActive;
   endRecognitionSession();
   recognitionAlternatives = [];
   lastSpeechActivityAt = null;
@@ -829,7 +848,7 @@ function renderQuestion() {
   clearTimeout(questionSpeechTimer);
   stopQuestionPlayback();
   categoryEl.textContent = current.category;
-  questionTextEl.textContent = current.question;
+  questionTextEl.textContent = isSchoolFollowUp ? "何を勉強したいですか？" : current.question;
   const displayedQuestionNumber = interviewType === "employment" && currentIndex >= 9
     ? currentIndex
     : currentIndex + 1;
@@ -853,7 +872,7 @@ function renderQuestion() {
     );
   }
 
-  if (interviewType === "employment") {
+  if (interviewType === "employment" || interviewType === "school") {
     speakQuestion();
     return;
   }
@@ -1576,9 +1595,44 @@ function playJobQuestionAudio() {
   });
 }
 
+function playSchoolQuestionAudio() {
+  const audioPath = schoolFollowUpActive && currentIndex === 5
+    ? "audio/school/q06b.wav"
+    : SCHOOL_QUESTION_AUDIO[currentIndex];
+  if (!audioPath) {
+    setVoiceStatus("質問音声が設定されていません。回答はそのまま続けられます。", "error");
+    return;
+  }
+
+  endRecognitionSession();
+  stopQuestionPlayback();
+  const audio = new Audio(audioPath);
+  questionAudio = audio;
+  audio.preload = "auto";
+  audio.addEventListener("play", () => {
+    setVoiceStatus("質問を再生しています。", "ready");
+  });
+  audio.addEventListener("ended", () => {
+    if (questionAudio === audio) questionAudio = null;
+    setVoiceStatus("「話す」を押して回答してください。", "ready");
+  });
+  audio.addEventListener("error", () => {
+    if (questionAudio === audio) questionAudio = null;
+    setVoiceStatus("質問音声を読み込めませんでした。回答はそのまま続けられます。", "error");
+  });
+  audio.play().catch(() => {
+    if (questionAudio === audio) questionAudio = null;
+    setVoiceStatus("質問音声を再生できませんでした。「質問を聞く」を押してください。", "error");
+  });
+}
+
 function speakQuestion() {
   if (interviewType === "employment") {
     playJobQuestionAudio();
+    return;
+  }
+  if (interviewType === "school") {
+    playSchoolQuestionAudio();
     return;
   }
 
@@ -1611,7 +1665,7 @@ function speakQuestion() {
 }
 
 function unlockSpeechSynthesis() {
-  if (interviewType === "employment") return;
+  if (interviewType === "employment" || interviewType === "school") return;
   if (speechSynthesisUnlocked || !("speechSynthesis" in window)) return;
   const synth = window.speechSynthesis;
   synth.cancel();
@@ -1998,7 +2052,9 @@ profileFormEl.addEventListener("submit", (event) => {
 editProfileBtn.addEventListener("click", editProfile);
 
 scoreAnswerBtn.addEventListener("click", () => {
-  const rawAnswer = answerInputEl.value;
+  const rawAnswer = schoolFollowUpActive
+    ? `${schoolMainAnswer} ${answerInputEl.value}`.trim()
+    : answerInputEl.value;
   const scores = scoreCurrentAnswer(rawAnswer);
   evaluateInternalNotes(rawAnswer, scores);
   renderScores(scores);
@@ -2016,9 +2072,27 @@ function jobAnswerNeedsAnxietyFollowUp(rawAnswer) {
   return hasAnxiety && !clearlyNoAnxiety;
 }
 
+function schoolAnswerNeedsStudyFollowUp(rawAnswer) {
+  const answer = normalize(rawAnswer);
+  return hasAny(answer, ["専門学校", "大学", "進学", "学校に行き", "入学したい"]);
+}
+
 nextQuestionBtn.addEventListener("click", () => {
   if (currentIndex === questions.length - 1) {
     currentIndex = 0;
+    schoolFollowUpActive = false;
+    schoolMainAnswer = "";
+  } else if (interviewType === "school" && currentIndex === 5 && schoolFollowUpActive) {
+    schoolFollowUpActive = false;
+    schoolMainAnswer = "";
+    currentIndex = 6;
+  } else if (
+    interviewType === "school"
+    && currentIndex === 5
+    && schoolAnswerNeedsStudyFollowUp(answerInputEl.value)
+  ) {
+    schoolMainAnswer = answerInputEl.value;
+    schoolFollowUpActive = true;
   } else if (
     interviewType === "employment"
     && currentIndex === 8
