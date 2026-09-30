@@ -20,6 +20,8 @@
         <button type="button" class="secondary" data-language="bn" lang="bn">বাংলা（ベンガル語）</button>
         <button type="button" class="secondary" data-language="id" lang="id">Bahasa Indonesia（インドネシア語）</button>
         <button type="button" class="secondary" data-language="th" lang="th">ภาษาไทย（タイ語）</button>
+        <button type="button" class="secondary" data-language="ky" lang="ky">Кыргызча（キルギス語・Beta）</button>
+        <button type="button" class="secondary" data-language="my" lang="my">မြန်မာဘာသာ（ミャンマー語）</button>
       </div>
     </section>
 
@@ -93,13 +95,14 @@
 
       <div class="question-box">
         <p class="category" id="category"></p>
-        <h2 id="questionText"></h2>
+        <h2 id="questionText" lang="ja"></h2>
       </div>
 
       <div class="answer-field">
         <label for="answerInput">回答（音声認識の内容を確認・修正できます）</label>
         <textarea
           id="answerInput"
+          lang="ja"
           rows="5"
           inputmode="text"
           autocomplete="off"
@@ -160,6 +163,7 @@
 
   <footer class="voice-credit">VOICEVOX:玄野武宏(CV:ガロ)</footer>
 
-  <script src="script.js?v=20260928-voicevox-school"></script>
+  <script src="locales.js?v=20260930-ky-my"></script>
+  <script src="script.js?v=20260930-ky-my"></script>
 </body>
 </html>

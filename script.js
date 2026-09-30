@@ -315,6 +315,7 @@ const voiceStatusTextEl = $("voiceStatusText");
 
 let profile = {};
 let feedbackLanguage = "ja";
+let voiceStatusMessage = "音声機能を準備しています…";
 let currentIndex = 0;
 let recognition = null;
 let isListening = false;
@@ -369,7 +370,7 @@ const IS_MOBILE = IS_IOS || /Android|Mobile/i.test(navigator.userAgent);
 const USE_IOS_NATIVE_DICTATION = IS_IOS;
 
 function showLoginError(message) {
-  loginErrorEl.textContent = message;
+  loginErrorEl.textContent = learnerText(message);
   loginErrorEl.classList.remove("hidden");
   loginPasswordEl.setAttribute("aria-invalid", "true");
 }
@@ -760,13 +761,13 @@ function createProfileFields() {
 
     const label = document.createElement("label");
     label.htmlFor = `profile-${field.key}`;
-    label.innerHTML = `${field.label}<span class="required-mark">必須</span>`;
+    label.innerHTML = `${learnerText(field.label)}<span class="required-mark">${learnerText("必須")}</span>`;
 
     const input = document.createElement("input");
     input.id = `profile-${field.key}`;
     input.name = field.key;
     input.type = field.type || "text";
-    input.placeholder = field.placeholder || "";
+    input.placeholder = learnerText(field.placeholder || "");
     input.required = true;
     if (field.autocomplete) input.autocomplete = field.autocomplete;
     if (field.inputMode) input.inputMode = field.inputMode;
@@ -798,7 +799,7 @@ function readProfile() {
   });
 
   if (firstInvalidInput) {
-    profileErrorEl.textContent = "すべての項目を正しく入力してください。";
+    profileErrorEl.textContent = learnerText("すべての項目を正しく入力してください。");
     profileErrorEl.classList.remove("hidden");
     firstInvalidInput.focus();
     return null;
@@ -809,6 +810,9 @@ function readProfile() {
 function renderProfileSummary() {
   profileSummaryEl.textContent = getProfileFields().map((field) => {
     const value = profile[field.key];
+    if (field.key === "age" && ADDITIONAL_LANGUAGES[feedbackLanguage]) {
+      return ADDITIONAL_LANGUAGES[feedbackLanguage].age.replace("{value}", value);
+    }
     return field.formatValue ? field.formatValue(value) : value;
   }).join(" ／ ");
 }
@@ -847,7 +851,7 @@ function renderQuestion() {
   detectedLongPauses = [];
   clearTimeout(questionSpeechTimer);
   stopQuestionPlayback();
-  categoryEl.textContent = current.category;
+  categoryEl.textContent = learnerText(current.category);
   questionTextEl.textContent = isSchoolFollowUp ? "何を勉強したいですか？" : current.question;
   const displayedQuestionNumber = interviewType === "employment" && currentIndex >= 9
     ? currentIndex
@@ -861,7 +865,7 @@ function renderQuestion() {
   debugPanelEl.classList.add("hidden");
   answerInputEl.disabled = false;
   scoreAnswerBtn.disabled = false;
-  nextQuestionBtn.textContent = currentIndex === questions.length - 1 ? "最初から" : "次の質問へ";
+  nextQuestionBtn.textContent = learnerText(currentIndex === questions.length - 1 ? "最初から" : "次の質問へ");
   updateVoiceInputButton();
   if (recognition) {
     setVoiceStatus(
@@ -1389,7 +1393,54 @@ const GUIDANCE_LABELS = {
   th: { achieved: "ทำได้แล้ว", missing: "ยังขาด", complete: "ดีมาก ขอให้มั่นใจแบบนี้ในการสัมภาษณ์!" }
 };
 
+// 既存の言語別テーブルに追加するだけで、採点処理は共通のままにします。
+for (const [language, locale] of Object.entries(ADDITIONAL_LANGUAGES)) {
+  INTERVIEW_SELECTION_TEXT[language] = locale.selection;
+  SCORE_DISPLAY_TEXT[language] = locale.score;
+  GUIDANCE_LABELS[language] = locale.labels;
+  const translateItems = (questions) => questions.map((items) => items && items.map(([label, advice]) => [
+    label,
+    locale.achieved.replace("{label}", label),
+    locale.missing.replace("{label}", label),
+    advice
+  ]));
+  TRANSLATED_SCORE_ITEMS[language] = translateItems(locale.employment);
+  SCHOOL_TRANSLATED_SCORE_ITEMS[language] = translateItems(locale.school);
+  UPDATED_QUESTION_GUIDANCE[language] = TRANSLATED_SCORE_ITEMS[language].map((items) => items && items.map((item) => item.slice(1)));
+  SCHOOL_QUESTION_GUIDANCE[language] = SCHOOL_TRANSLATED_SCORE_ITEMS[language].map((items) => items && items.map((item) => item.slice(1)));
+}
+
+function learnerText(message) {
+  return ADDITIONAL_LANGUAGES[feedbackLanguage]?.ui[message] ?? message;
+}
+
+// 静的な表示だけを翻訳します。質問、回答欄の値、利用者の入力には触れません。
+// 原文を保持し、言語選択に戻って既存言語を選び直した場合も元どおりにします。
+const learnerOriginalText = new Map();
+function applyLearnerLanguage() {
+  document.title = learnerText("面接練習アプリ");
+  const selectors = [
+    "#loginScreen .eyebrow", "#loginTitle", "label[for='loginPassword']", "#loginForm button",
+    "#profileTitle", "#profileForm button", ".profile-summary p span", "#editProfile",
+    "label[for='answerInput']", "#voiceHelp", "#repeatQuestion", "#scoreAnswer", "#retryQuestion",
+    "#scoreTitle", "#feedbackHeading", "#adviceHeading"
+  ];
+  for (const selector of selectors) {
+    const element = document.querySelector(selector);
+    if (!learnerOriginalText.has(element)) learnerOriginalText.set(element, element.textContent.trim());
+    element.textContent = learnerText(learnerOriginalText.get(element));
+  }
+  answerInputEl.placeholder = learnerText(USE_IOS_NATIVE_DICTATION
+    ? "「音声入力を開く」を押し、キーボード右下のマイクから回答してください。"
+    : "「話す」を押して回答してください。必要ならここに直接入力できます。");
+  voiceStatusTextEl.textContent = learnerText(voiceStatusMessage);
+  updateVoiceInputButton();
+}
+
 function getIntroductionGuidance(language) {
+  if (ADDITIONAL_LANGUAGES[language]) {
+    return getProfileFields().map((field) => ADDITIONAL_LANGUAGES[language].introduction[field.key]);
+  }
   const values = getProfileFields().map((field) => profile[field.key]);
   const messages = {
     ja: [
@@ -1685,18 +1736,19 @@ function updateVoiceInputButton() {
   if (USE_IOS_NATIVE_DICTATION) {
     voiceInputBtn.classList.remove("is-listening");
     voiceInputBtn.setAttribute("aria-pressed", "false");
-    voiceButtonTextEl.textContent = "音声入力を開く";
+    voiceButtonTextEl.textContent = learnerText("音声入力を開く");
     return;
   }
 
   const isCapturingAnswer = isAcceptingSpeech;
   voiceInputBtn.classList.toggle("is-listening", isCapturingAnswer);
   voiceInputBtn.setAttribute("aria-pressed", String(isCapturingAnswer));
-  voiceButtonTextEl.textContent = isCapturingAnswer ? "止める" : "話す";
+  voiceButtonTextEl.textContent = learnerText(isCapturingAnswer ? "止める" : "話す");
 }
 
 function setVoiceStatus(message, state = "") {
-  voiceStatusTextEl.textContent = message;
+  voiceStatusMessage = message;
+  voiceStatusTextEl.textContent = learnerText(message);
   voiceStatusEl.classList.toggle("is-ready", state === "ready");
   voiceStatusEl.classList.toggle("is-listening", state === "listening");
   voiceStatusEl.classList.toggle("is-error", state === "error");
@@ -1984,6 +2036,7 @@ document.querySelectorAll("[data-language]").forEach((button) => {
   button.addEventListener("click", () => {
     const language = button.dataset.language;
     feedbackLanguage = SCORE_DISPLAY_TEXT[language] ? language : "ja";
+    applyLearnerLanguage();
     const text = INTERVIEW_SELECTION_TEXT[language];
     document.documentElement.lang = language;
     $("interviewTypeEyebrow").textContent = text.app;
@@ -2009,11 +2062,11 @@ document.querySelectorAll("[data-interview-type]").forEach((button) => {
   button.addEventListener("click", () => {
     interviewType = button.dataset.interviewType;
     questions = interviewType === "school" ? schoolQuestions : employmentQuestions;
-    document.documentElement.lang = "ja";
+    document.documentElement.lang = ADDITIONAL_LANGUAGES[feedbackLanguage] ? feedbackLanguage : "ja";
     createProfileFields();
-    $("appTitle").textContent = interviewType === "school" ? "日本語学校入学面接" : "就職面接採点";
+    $("appTitle").textContent = learnerText(interviewType === "school" ? "日本語学校入学面接" : "就職面接採点");
     document.querySelectorAll("#profileScreen .eyebrow, #interviewScreen .eyebrow").forEach((element) => {
-      element.textContent = interviewType === "school" ? "日本語学校入学面接" : "日本語学校 N3レベル";
+      element.textContent = learnerText(interviewType === "school" ? "日本語学校入学面接" : "日本語学校 N3レベル");
     });
     $("interviewTypeScreen").classList.add("hidden");
     loginScreenEl.classList.remove("hidden");
